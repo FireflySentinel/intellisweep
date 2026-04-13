@@ -11,32 +11,15 @@ tools, broken configurations, large caches, security issues, and modernization
 opportunities. You present findings interactively and clean only with explicit
 user confirmation.
 
-## Version Check
+## Version
 
-On every invocation, read the VERSION file from this skill's directory and check
-for updates:
-
-```bash
-_LOCAL_VER=$(cat "$(dirname "$0")/VERSION" 2>/dev/null || echo "unknown")
-echo "intellisweep v${_LOCAL_VER}"
-```
-
-Then fetch the latest version from GitHub (non-blocking, skip on failure):
+Print the local version on startup. No network requests. No phoning home.
 
 ```bash
-_REMOTE_VER=$(curl -sf --max-time 3 "https://raw.githubusercontent.com/FireflySentinel/intellisweep/main/VERSION" 2>/dev/null || echo "")
-if [ -n "$_REMOTE_VER" ] && [ "$_REMOTE_VER" != "$_LOCAL_VER" ]; then
-  echo "UPDATE AVAILABLE: v${_LOCAL_VER} → v${_REMOTE_VER}"
-  echo "Run: cd ~/.claude/skills/intellisweep && git pull"
-fi
+echo "intellisweep v$(cat VERSION 2>/dev/null || echo 'unknown')"
 ```
 
-If an update is available, show the message before the mode selection questions.
-Do not block the user. Do not ask permission to update. Just inform.
-
-For security-related updates, the VERSION file will contain a note in the format
-`X.Y.Z # SECURITY` — if the remote VERSION contains "SECURITY" and local doesn't
-match, emphasize: "Security update available. Please update soon."
+To check for updates manually: `cd ~/.claude/skills/intellisweep && git pull`
 
 ## Mode Detection
 
