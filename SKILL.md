@@ -377,45 +377,39 @@ When cleaning dead PATH entries or broken lazy-load functions from shell configs
 
 ### Report
 
-After all actions complete, generate an HTML report and open it in the browser.
+After all actions complete, generate a markdown report.
 
-Write to `~/.devclean-report-YYYY-MM-DD.html` using the Write tool. The HTML should be
-a single self-contained file (inline CSS, no external dependencies) with:
+Write to `~/.devclean-report-YYYY-MM-DD.md` using the Write tool:
 
-**Layout:**
-- Clean sans-serif font (system-ui)
-- Max-width 720px, centered
-- Dark header bar with white text showing the date and total space recovered
+```markdown
+# intellisweep report — YYYY-MM-DD
 
-**Summary card** at the top:
-- Before/after disk space in large text
-- Space recovered highlighted in green
-- Items found / items cleaned / items skipped counts
+Disk: XGB free → YGB free (+ZGB recovered)
+Items: N found, M cleaned, K skipped
 
-**Findings table** with color-coded rows:
-- Green background for permanent wins
-- Yellow background for long-lasting wins
-- Gray background for temporary wins (with note: "refills on use")
-- Each row: item name, size, evidence, permanence, action taken
+## Permanent wins (gone forever)
+| Item | Size | Evidence |
+|------|------|----------|
 
-**Security alerts** section (if any):
-- Red left border
-- File, line number, issue type, suggested action
+## Long-lasting wins (refills only on active use)
+| Item | Size | Evidence |
+|------|------|----------|
 
-**Backup info** at the bottom:
-- Location of backup directory
-- How to restore: the exact command
+## Temporary wins (refills within days)
+| Item | Size | Evidence | Note |
+|------|------|----------|------|
 
-Keep the HTML simple. No JavaScript, no frameworks. Just semantic HTML + inline CSS
-that looks clean in any browser.
+## Security alerts
+| File:Line | Issue | Action needed |
+|-----------|-------|---------------|
 
-After writing the file:
-```bash
-open ~/.devclean-report-YYYY-MM-DD.html
+## Backup
+Location: ~/.devclean-backup/YYYY-MM-DD/
+Restore: cp -a ~/.devclean-backup/YYYY-MM-DD/<item> <original-path>
 ```
 
-This gives the user a shareable, screenshot-friendly report that looks polished
-without building a GUI.
+Tell the user where the report is. It renders natively on GitHub, VS Code,
+and any markdown viewer.
 
 ### Backup management
 
