@@ -29,8 +29,8 @@ That's it. No build step, no dependencies.
 ## Usage
 
 ```
-/intellisweep              # Full audit + interactive cleanup
-/intellisweep --audit      # Audit only, no cleanup (dry run)
+/intellisweep              # Full scan + interactive cleanup
+/intellisweep --dry-run    # Scan only, no cleanup (show what it would find)
 ```
 
 ## What it finds
@@ -50,7 +50,7 @@ That's it. No build step, no dependencies.
 - **One at a time**: Every deletion is confirmed individually. No batch deletes.
 - **Rolling cleanup**: Safe items first (frees space), then moderate items one-by-one
 - **Alert-only security**: Credential files are flagged, never modified or deleted
-- **Dry-run mode**: `/intellisweep --audit` shows everything without touching anything
+- **Dry-run mode**: `/intellisweep --dry-run` shows everything without touching anything
 
 ## Requirements
 

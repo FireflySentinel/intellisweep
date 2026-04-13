@@ -13,7 +13,7 @@ user confirmation.
 ## Mode Detection
 
 Check how the skill was invoked:
-- If the user said `/intellisweep --audit` or `/intellisweep audit` or "just audit" or "dry run":
+- If the user said `/intellisweep --dry-run` or `/intellisweep -n` or "just scan" or "dry run":
   run Phase 1 and Phase 2 only. Do NOT offer cleanup. End with the triage report.
 - Otherwise: run the full workflow (Phase 1 → Phase 2 → Phase 3).
 
@@ -174,7 +174,7 @@ Present findings in a categorized report. Use a markdown table for each category
 
 Show the total recoverable space per tier.
 
-If this is a dry-run (audit-only mode): stop here. Say "Audit complete. Run `/intellisweep`
+If this is a dry-run mode: stop here. Say "Scan complete. Run `/intellisweep`
 to proceed with cleanup."
 
 Otherwise, ask the user which tiers/items they want to clean.

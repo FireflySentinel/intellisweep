@@ -90,10 +90,10 @@ at least one stale tool, some caches.
 
 **Pass criteria**: Handles the "nothing to do" case gracefully.
 
-## Scenario 7: Dry-run (audit only)
+## Scenario 7: Dry-run
 
 **Steps**:
-1. Run `/intellisweep --audit`
+1. Run `/intellisweep --dry-run`
 2. Verify: Full triage report is presented
 3. Verify: No cleanup is offered or performed
 4. Verify: No files are modified, deleted, or backed up
