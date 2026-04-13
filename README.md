@@ -21,7 +21,7 @@ No static script could do this. This skill packages that experience.
 ## Install
 
 ```bash
-git clone https://github.com/FireflySentinel/intellisweep.git ~/.claude/skills/clean
+git clone https://github.com/FireflySentinel/intellisweep.git ~/.claude/skills/intellisweep
 ```
 
 That's it. No build step, no dependencies.
@@ -29,8 +29,8 @@ That's it. No build step, no dependencies.
 ## Usage
 
 ```
-/clean              # Full audit + interactive cleanup
-/clean --audit      # Audit only, no cleanup (dry run)
+/intellisweep              # Full audit + interactive cleanup
+/intellisweep --audit      # Audit only, no cleanup (dry run)
 ```
 
 ## What it finds
@@ -50,7 +50,7 @@ That's it. No build step, no dependencies.
 - **One at a time**: Every deletion is confirmed individually. No batch deletes.
 - **Rolling cleanup**: Safe items first (frees space), then moderate items one-by-one
 - **Alert-only security**: Credential files are flagged, never modified or deleted
-- **Dry-run mode**: `/clean --audit` shows everything without touching anything
+- **Dry-run mode**: `/intellisweep --audit` shows everything without touching anything
 
 ## Requirements
 

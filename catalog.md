@@ -1,6 +1,6 @@
 # Cleanup Catalog — macOS
 
-This file is read by the /clean skill during the audit phase. It contains the
+This file is read by the /intellisweep skill during the audit phase. It contains the
 knowledge base of paths to scan, security patterns to detect, and tools to flag.
 
 Community contributions welcome. See CONTRIBUTING.md (coming soon).

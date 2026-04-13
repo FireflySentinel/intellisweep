@@ -1,6 +1,6 @@
 # Testing Guide
 
-/clean is a Claude Code skill (prompt engineering, not compiled code). It cannot be
+/intellisweep is a Claude Code skill (prompt engineering, not compiled code). It cannot be
 unit tested. This document defines manual test scenarios for QA validation.
 
 Run each scenario before releasing a new version. Report results in the PR.
@@ -11,7 +11,7 @@ Run each scenario before releasing a new version. Report results in the PR.
 at least one stale tool, some caches.
 
 **Steps**:
-1. Run `/clean`
+1. Run `/intellisweep`
 2. Verify: Audit completes in < 5 minutes
 3. Verify: Findings appear in 3+ categories
 4. Verify: Total recoverable space is 10GB+ (typical dev Mac)
@@ -27,7 +27,7 @@ at least one stale tool, some caches.
 **Setup**: A Mac with < 5GB free space and several large caches/stale tools.
 
 **Steps**:
-1. Run `/clean`
+1. Run `/intellisweep`
 2. Verify: Audit completes (may be slower due to disk pressure)
 3. Select a mix of safe + moderate items
 4. Verify: Safe items are cleaned FIRST (no backup)
@@ -42,7 +42,7 @@ at least one stale tool, some caches.
 **Setup**: A Mac without Homebrew (fresh install or Homebrew removed).
 
 **Steps**:
-1. Run `/clean`
+1. Run `/intellisweep`
 2. Verify: No crash or error when brew commands fail
 3. Verify: Output mentions "Homebrew not installed, skipping brew-related checks"
 4. Verify: Other categories still scanned (caches, shell config, etc.)
@@ -52,7 +52,7 @@ at least one stale tool, some caches.
 ## Scenario 4: Backup and restore round-trip
 
 **Steps**:
-1. Run `/clean`
+1. Run `/intellisweep`
 2. Select a moderate-risk item (e.g., an old SDK)
 3. Confirm deletion
 4. Verify: manifest.json exists at `~/.devclean-backup/YYYY-MM-DD/manifest.json`
@@ -67,7 +67,7 @@ at least one stale tool, some caches.
 ## Scenario 5: Partial cancellation
 
 **Steps**:
-1. Run `/clean`
+1. Run `/intellisweep`
 2. Select 5+ items for cleanup
 3. After 2-3 items are cleaned, cancel (Ctrl+C or tell Claude to stop)
 4. Verify: Items cleaned before cancel are gone
@@ -82,7 +82,7 @@ at least one stale tool, some caches.
 **Setup**: A relatively fresh Mac with minimal dev tools.
 
 **Steps**:
-1. Run `/clean`
+1. Run `/intellisweep`
 2. Verify: Audit completes quickly (< 2 minutes)
 3. Verify: Few or no findings
 4. Verify: Skill says something like "Your machine is pretty clean" rather than
@@ -93,11 +93,11 @@ at least one stale tool, some caches.
 ## Scenario 7: Dry-run (audit only)
 
 **Steps**:
-1. Run `/clean --audit`
+1. Run `/intellisweep --audit`
 2. Verify: Full triage report is presented
 3. Verify: No cleanup is offered or performed
 4. Verify: No files are modified, deleted, or backed up
-5. Verify: Ends with "Run `/clean` to proceed with cleanup"
+5. Verify: Ends with "Run `/intellisweep` to proceed with cleanup"
 
 **Pass criteria**: Zero side effects in audit-only mode.
 

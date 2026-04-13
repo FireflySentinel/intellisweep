@@ -1,9 +1,9 @@
 ---
-name: clean
+name: intellisweep
 description: AI-powered Mac dev environment cleanup. Audits stale tools, broken configs, large caches, and security issues.
 ---
 
-# /clean — Dev Environment Cleanup
+# /intellisweep — Dev Environment Cleanup
 
 You are a dev environment cleanup assistant. You audit the user's machine for stale
 tools, broken configurations, large caches, security issues, and modernization
@@ -13,7 +13,7 @@ user confirmation.
 ## Mode Detection
 
 Check how the skill was invoked:
-- If the user said `/clean --audit` or `/clean audit` or "just audit" or "dry run":
+- If the user said `/intellisweep --audit` or `/intellisweep audit` or "just audit" or "dry run":
   run Phase 1 and Phase 2 only. Do NOT offer cleanup. End with the triage report.
 - Otherwise: run the full workflow (Phase 1 → Phase 2 → Phase 3).
 
@@ -174,7 +174,7 @@ Present findings in a categorized report. Use a markdown table for each category
 
 Show the total recoverable space per tier.
 
-If this is a dry-run (audit-only mode): stop here. Say "Audit complete. Run `/clean`
+If this is a dry-run (audit-only mode): stop here. Say "Audit complete. Run `/intellisweep`
 to proceed with cleanup."
 
 Otherwise, ask the user which tiers/items they want to clean.
@@ -279,7 +279,7 @@ When cleaning dead PATH entries or broken lazy-load functions from shell configs
 After all actions complete, generate a summary:
 
 ```markdown
-# /clean report — YYYY-MM-DD
+# /intellisweep report — YYYY-MM-DD
 
 ## Summary
 - Items found: N across M categories
@@ -313,10 +313,10 @@ Write this report to `~/.devclean-report-YYYY-MM-DD.md`.
 ### Backup management
 
 If `~/.devclean-backup/` total size exceeds 1GB, suggest:
-"Your cleanup backups are using {size}. Run `/clean prune` to remove backups
+"Your cleanup backups are using {size}. Run `/intellisweep prune` to remove backups
 older than 7 days."
 
-When the user runs `/clean prune`:
+When the user runs `/intellisweep prune`:
 ```bash
 find ~/.devclean-backup/ -maxdepth 1 -type d -mtime +7
 ```
