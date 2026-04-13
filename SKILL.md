@@ -217,34 +217,62 @@ to inflate the total.
 **Always present permanent wins first, regardless of size.** A 500MB stale SDK is
 a better cleanup than a 2GB browser cache that refills by tomorrow.
 
-### Categories
+### Triage output format
 
-**Permanent wins** (space freed forever)
+Claude Code renders markdown in the terminal. Use this formatting to make the
+output scannable and visually clear.
 
-| Item | Size | Evidence | Permanence | Risk |
-|------|------|----------|------------|------|
-| ... | 3.9GB | Flutter SDK, last used 6 months ago | Permanent | Moderate |
+**Start with a summary banner:**
 
-**Long-lasting wins** (stays free unless you actively use the tool again)
+```
+## intellisweep scan results
 
-| Item | Size | Evidence | Permanence | Risk |
-|------|------|----------|------------|------|
-| ... | 1.9GB | Playwright browsers in cache | Long-lasting | Safe |
+**Disk:** 11GB free of 228GB (5% free)
+**Found:** 36.5GB recoverable across 18 items
+**Permanent:** 30.2GB | **Long-lasting:** 4.1GB | **Temporary:** 2.2GB
+```
 
-**Temporary wins** (refills on normal use, be honest about it)
+**Then each category with a clear header and compact table:**
 
-| Item | Size | Evidence | Permanence | Risk |
-|------|------|----------|------------|------|
-| ... | 858MB | Slack cache | Temporary, refills as you use Slack | Safe |
+```
+### Permanent wins — 30.2GB (gone forever)
 
-For temporary items, tell the user: "This will free XGB now but will gradually
-refill as you use [app]. Still worth clearing if you need space urgently."
+| # | Item | Size | Evidence |
+|---|------|------|----------|
+| 1 | Arknights (PlayCover) | 16.5GB | App deleted, container data orphaned |
+| 2 | Android SDK | 7.7GB | No Android Studio installed, Flutter inactive |
+| 3 | Flutter SDK | 3.9GB | Last git activity: 2026-02-18, no shell history |
+| 4 | MathWorks/MATLAB | 845MB | Support files only, no MATLAB installed |
 
-**Security flags (ALERT ONLY — no cleanup)**
+### Long-lasting wins — 4.1GB (refills only if you use the tool)
 
-| Item | File:Line | Issue | Suggestion |
-|------|-----------|-------|------------|
-| ... | ~/.zshrc:18 | Hardcoded OpenAI API key | Rotate key, move to ~/.zshrc.local |
+| # | Item | Size | Evidence |
+|---|------|------|----------|
+| 5 | Playwright browsers | 1.9GB | Test browser cache, redownloads on test run |
+| 6 | Homebrew cache | 1.1GB | Old downloads, `brew cleanup` equivalent |
+| 7 | Camoufox cache | 669MB | Browser automation cache |
+| 8 | PyInstaller cache | 647MB | Build cache from one-time project |
+
+### Temporary wins — 2.2GB (refills within days, be honest)
+
+| # | Item | Size | Evidence | Note |
+|---|------|------|----------|------|
+| 9 | Slack cache | 1.4GB | Regenerates as you use Slack | Back in ~1 week |
+| 10 | Cursor caches | 1.5GB | WebStorage + CachedData | Back in ~days |
+
+### Security alerts (no cleanup, action needed from you)
+
+| File | Line | Issue | What to do |
+|------|------|-------|------------|
+| ~/.zshrc | 18 | OpenAI API key in plaintext | Rotate the key, move to ~/.zshrc.local |
+```
+
+**Key formatting rules:**
+- Number every item so the user can say "clean 1 through 4" or "skip 10"
+- Show per-section totals in the header
+- Temporary section always includes a "Note" column with honest refill estimate
+- Security section is visually separated, no numbers (not cleanable)
+- Keep evidence strings short. One line per item. No paragraphs.
 
 ### Evidence string format
 - Stale tools: "last modified: {date}, {N} months ago; no shell history hits"
