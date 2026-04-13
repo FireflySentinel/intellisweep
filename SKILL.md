@@ -270,24 +270,66 @@ to proceed with cleanup."
 
 Otherwise, ask the user which tiers/items they want to clean.
 
+### App orphan detection
+
+Before presenting the triage report, cross-reference installed apps against Library data:
+
+```bash
+# List installed apps
+ls /Applications/ 2>/dev/null
+# List Library containers
+ls ~/Library/Containers/ 2>/dev/null
+# List Application Support entries
+ls ~/Library/Application\ Support/ 2>/dev/null
+```
+
+For each entry in Containers/ or Application Support/ where the parent app is NOT
+in /Applications/ (match by bundle ID or app name), flag it as an orphan:
+"[app name] was uninstalled but left behind [size] of data in [path]."
+
+Orphans are permanent wins. They never refill. Add them to the Permanent wins tier.
+
 ## Phase 3: Action
 
-### Cleanup order (sequential rolling)
+### Batch safe items
 
-Process items in this order to maximize available disk space:
+Safe-risk items (caches that regenerate) do NOT need individual confirmation.
+Present them as a batch:
 
-1. **Safe items first** — no backup needed. Delete directly. This frees space for
-   subsequent backups.
-2. **Moderate items one-by-one** — for each item:
+"Found N safe items totaling XGB (caches, derived data). These all regenerate
+on demand. Clean all at once?"
+  → [Clean all safe items] [Let me pick] [Skip safe items]
+
+If "Clean all safe items": delete them all, show running total of space freed.
+If "Let me pick": fall back to per-item confirmation.
+If "Skip": move to moderate items.
+
+This respects the user's time. Nobody needs to approve 12 cache deletions one by one.
+
+### Moderate and destructive items (one by one)
+
+These still require individual confirmation:
+
+1. **Moderate items** — for each item:
    a. Write manifest entry
    b. Copy to backup (`cp -a`)
    c. Show the exact rm command
    d. Ask for confirmation
    e. Execute deletion
-   f. Report space freed
-3. **Destructive items** — same as moderate but with double confirmation:
+   f. Show space freed so far
+2. **Destructive items** — same as moderate but with double confirmation:
    "This item may contain data that cannot be recovered from backup alone.
    Are you sure?"
+
+### Live before/after feedback
+
+Show disk space after EVERY deletion, not just in the final report:
+```bash
+df -h / | tail -1 | awk '{print "Free: "$4}'
+```
+
+The user should feel the progress. "Free: 24GB... Free: 28GB... Free: 31GB..."
+This is the honest version of a progress bar.
 
 ### Pre-flight check
 
