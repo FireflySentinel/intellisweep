@@ -2,6 +2,20 @@
 
 AI-powered dev environment cleanup for Mac. A Claude Code skill that replaces crappy cleaner apps.
 
+## Table of contents
+
+- [The story](#the-story)
+- [What it does](#what-it-does)
+- [Install](#install)
+- [Usage](#usage)
+- [What it finds](#what-it-finds)
+- [Safety](#safety)
+- [Requirements](#requirements)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Uninstall](#uninstall)
+- [License](#license)
+
 ## The story
 
 For 10 years I used ad-filled Mac cleaner apps to free disk space. Then I asked Claude Code to clean my machine. In one conversation it recovered 36GB by detecting stale tools (Flutter unused for months), broken configs (NVM with shell errors), abandoned package managers (Anaconda never activated), and flagged a hardcoded API key in my .zshrc. It replaced NVM with fnm, cleaned dead shell references, and modernized my dev environment.
@@ -76,6 +90,19 @@ The long-term vision: IntelliSweep becomes Claude Code's understanding of the ph
 
 Want to add paths for a tool not yet covered? Edit `catalog.md` and submit a PR.
 The format is a markdown table with path, tool name, and notes.
+
+## Uninstall
+
+```bash
+rm -rf ~/.claude/skills/intellisweep
+```
+
+To also remove backup data and reports:
+
+```bash
+rm -rf ~/.devclean-backup
+rm -f ~/.devclean-report-*.md
+```
 
 ## License
 
