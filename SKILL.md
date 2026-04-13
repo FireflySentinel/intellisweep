@@ -199,10 +199,15 @@ ls -la ~/.netrc ~/.aws/credentials ~/.docker/config.json ~/.npmrc ~/.pypirc ~/.k
 
 Present findings in a categorized report. Use a markdown table for each category.
 
-### Permanence matters more than size
+### No cleanup theater
 
-Most cleanup tools lead with caches because the numbers are big. But cache space
-refills within hours. IntelliSweep leads with permanent wins.
+IntelliSweep does not pad its numbers with temporary cache that refills overnight.
+Most cleanup tools clear browser caches and Slack data so they can show "freed 8GB!"
+in a satisfying animation. That space is back by Tuesday. That's cleanup theater.
+
+IntelliSweep leads with permanent wins and is honest about temporary ones. If
+clearing an item only buys the user a few days, say so. Never hide permanence
+to inflate the total.
 
 **Permanence levels:**
 - **Permanent**: this space is gone for good. Stale SDKs, orphaned app data, dead tools.

@@ -9,6 +9,7 @@ AI-powered dev environment cleanup for Mac. A Claude Code skill that replaces cr
 - [Install](#install)
 - [Usage](#usage)
 - [What it finds](#what-it-finds)
+- [No cleanup theater](#no-cleanup-theater)
 - [Safety](#safety)
 - [Requirements](#requirements)
 - [Roadmap](#roadmap)
@@ -58,6 +59,12 @@ That's it. No build step, no dependencies.
 | AI tool caches | Claude VM bundles, Cursor WebStorage, Copilot cache |
 | App data cruft | Orphaned containers from deleted apps, abandoned game data |
 | Security flags | Hardcoded API keys, old SSH keys, stale credential files |
+
+## No cleanup theater
+
+Most cleanup tools clear browser caches and Slack data so they can show "freed 8GB!" in a satisfying animation. That space is back by Tuesday.
+
+IntelliSweep tells you what's permanent and what's not. Every finding shows whether the freed space is gone for good, comes back only if you actively use the tool, or refills within hours. If a 2GB cache will be 2GB again by tomorrow, we'll say so. We'd rather show 4GB of real wins than 12GB of fake ones.
 
 ## Safety
 

@@ -42,6 +42,8 @@ GitHub: https://github.com/FireflySentinel/intellisweep
 - The personal story angle ("10 years of crappy cleaner apps") is the hook
 - The technical angle ("AI reasoning vs static checklists") is the HN bait
 - The closing question invites discussion
-- Have screenshots ready: the triage output showing 30GB+ recoverable
+- Have screenshots ready: the triage output showing permanent vs temporary wins
+- The "no cleanup theater" angle will resonate on HN. Everyone hates CleanMyMac's inflated numbers.
 - Be ready to answer: "why not just a shell script?" (the intelligence IS the product)
 - Be ready to answer: "isn't this just prompt engineering?" (yes, that's the point, the runtime is Claude Code)
+- Be ready to answer: "caches refill, what's the point?" (we agree! that's why we label permanence and lead with permanent wins)
