@@ -199,25 +199,44 @@ ls -la ~/.netrc ~/.aws/credentials ~/.docker/config.json ~/.npmrc ~/.pypirc ~/.k
 
 Present findings in a categorized report. Use a markdown table for each category.
 
+### Permanence matters more than size
+
+Most cleanup tools lead with caches because the numbers are big. But cache space
+refills within hours. IntelliSweep leads with permanent wins.
+
+**Permanence levels:**
+- **Permanent**: this space is gone for good. Stale SDKs, orphaned app data, dead tools.
+  The user will never accidentally regenerate a Flutter SDK they don't use.
+- **Long-lasting**: refills only if the user actively uses that specific tool again.
+  Xcode DerivedData for old projects, Playwright browsers, old Homebrew bottles.
+- **Temporary**: refills within hours/days of normal use. Browser caches, IDE caches,
+  Slack cache, Spotify cache. Still worth flagging if huge, but be honest about it.
+
+**Always present permanent wins first, regardless of size.** A 500MB stale SDK is
+a better cleanup than a 2GB browser cache that refills by tomorrow.
+
 ### Categories
 
-**Tier 1: Big wins (safe, recoverable)**
+**Permanent wins** (space freed forever)
 
-| Item | Size | Evidence | Risk | Action |
-|------|------|----------|------|--------|
-| ... | ... | ... | Safe | Delete (regenerates on demand) |
+| Item | Size | Evidence | Permanence | Risk |
+|------|------|----------|------------|------|
+| ... | 3.9GB | Flutter SDK, last used 6 months ago | Permanent | Moderate |
 
-**Tier 2: Dev tools and runtimes**
+**Long-lasting wins** (stays free unless you actively use the tool again)
 
-| Item | Size | Evidence | Risk | Action |
-|------|------|----------|------|--------|
-| ... | ... | last modified 2025-02-18, no shell history | Moderate | Remove (requires reinstall if needed) |
+| Item | Size | Evidence | Permanence | Risk |
+|------|------|----------|------------|------|
+| ... | 1.9GB | Playwright browsers in cache | Long-lasting | Safe |
 
-**Tier 3: Application data**
+**Temporary wins** (refills on normal use, be honest about it)
 
-| Item | Size | Evidence | Risk | Action |
-|------|------|----------|------|--------|
-| ... | ... | ... | Moderate/Destructive | Remove (app data may be lost) |
+| Item | Size | Evidence | Permanence | Risk |
+|------|------|----------|------------|------|
+| ... | 858MB | Slack cache | Temporary, refills as you use Slack | Safe |
+
+For temporary items, tell the user: "This will free XGB now but will gradually
+refill as you use [app]. Still worth clearing if you need space urgently."
 
 **Security flags (ALERT ONLY — no cleanup)**
 
