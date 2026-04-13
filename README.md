@@ -49,7 +49,7 @@ Type `/intellisweep` in Claude Code. Three quick questions configure the run:
 
 1. **Scan only or clean?** — choose whether to just look or actually remove things
 2. **What's bugging you?** — disk space, messy environment, security, or all of the above
-3. **Quick or deep?** — under 2 minutes for big wins, under 5 for everything
+3. **Quick or deep?** — about 5 minutes for big wins, 10 for everything
 
 Safe items (caches) can be batch-cleaned in one approval. Moderate items require individual confirmation with the reinstall command shown upfront. Everything is logged.
 

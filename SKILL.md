@@ -79,9 +79,9 @@ question: "Quick pass or leave no stone unturned?"
 header: "Depth"
 options:
   - label: "Quick pass"
-    description: "Under 2 minutes. Catches the big stuff. Good enough for most machines."
+    description: "About 5 minutes. Catches the big stuff. Good enough for most machines."
   - label: "Turn every stone"
-    description: "Under 5 minutes. Hunts down scattered node_modules, checks tool freshness, audits credentials."
+    description: "About 10 minutes. Hunts down scattered node_modules, checks tool freshness, audits credentials."
 
 ## Iron Rules (NEVER violate these)
 
@@ -130,7 +130,7 @@ list). Be extra careful with deletions."
 The catalog provides safeguards (never touch), known patterns (recognize when found),
 and security patterns.
 
-### FAST MODE (default, target < 2 minutes)
+### FAST MODE (default, target ~5 minutes)
 
 Run ALL of these commands in parallel (use multiple Bash tool calls in one message):
 
@@ -164,7 +164,7 @@ and knowledge base. For any item over 500MB not in the safeguard list:
 **IMPORTANT**: When reporting secrets, show file and line number only.
 NEVER echo the actual secret value in output.
 
-### DEEP MODE (--deep flag, target < 5 minutes)
+### DEEP MODE (--deep flag, target ~10 minutes)
 
 Run everything in fast mode PLUS these additional checks:
 

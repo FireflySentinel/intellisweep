@@ -83,7 +83,7 @@ at least one stale tool, some caches.
 
 **Steps**:
 1. Run `/intellisweep`
-2. Verify: Audit completes quickly (< 2 minutes)
+2. Verify: Audit completes quickly (< 5 minutes)
 3. Verify: Few or no findings
 4. Verify: Skill says something like "Your machine is pretty clean" rather than
    presenting an empty triage report
