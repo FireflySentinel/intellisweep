@@ -59,6 +59,16 @@ That's it. No build step, no dependencies.
 - Standard macOS tools (du, stat, find, df)
 - Homebrew (optional, graceful degradation if missing)
 
+## Roadmap
+
+**v1.0** (current) — macOS cleanup. Audit, triage, clean with backup safety model.
+
+**v1.1** — Linux support. `catalog-linux.md` with XDG paths, apt/dnf/pacman detection. CONTRIBUTING.md for community catalog contributions.
+
+**v2.0** — Dev environment doctor. Persistent machine manifest (`~/.intellisweep/manifest.json`) that tracks your environment across runs. Security scanning (LaunchAgents, browser extensions, suspicious processes). "New Mac setup" mode. Cross-machine awareness.
+
+The long-term vision: IntelliSweep becomes Claude Code's understanding of the physical machine it runs on.
+
 ## Contributing
 
 Want to add paths for a tool not yet covered? Edit `catalog.md` and submit a PR.
