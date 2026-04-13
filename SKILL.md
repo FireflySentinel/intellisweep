@@ -348,18 +348,20 @@ Safe items (caches) do NOT need individual confirmation:
 on demand. Clean all at once?"
   → [Clean all] [Let me pick] [Skip]
 
-### Moderate items (confirm each)
+### Moderate items (confirm each via AskUserQuestion)
 
-Show the exact command for each item, wait for confirmation:
+For each moderate item, use AskUserQuestion:
 
-```
-Will run: rm -rf /Users/username/flutter
-This frees approximately 3.9GB.
-To reinstall later: brew install flutter
-Confirm?
-```
+question: "rm -rf ~/flutter (3.9GB, permanent). Reinstall: brew install flutter"
+header: "Delete?"
+options:
+  - label: "Delete"
+    description: "Remove this item. Logged with reinstall instructions."
+  - label: "Skip"
+    description: "Keep this item, move to the next one."
 
-Where possible, include the reinstall command. This IS the "undo."
+One click to approve or skip. No typing "yes" or "confirm."
+Where possible, include the reinstall command in the question text.
 
 ### After each deletion
 
