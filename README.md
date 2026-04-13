@@ -71,9 +71,11 @@ That's it. No build step, no dependencies.
 ## Requirements
 
 - macOS (Linux support planned)
-- [Claude Code](https://claude.ai/download)
+- [Claude Code](https://claude.ai/download) (requires an Anthropic subscription)
 - Standard macOS tools (du, stat, find, df)
 - Homebrew (optional, graceful degradation if missing)
+
+Yes, this is "just" a prompt. The runtime is Claude Code. The intelligence is the prompt. A 10-line bash script can clear caches, but it won't detect orphaned app data from deleted apps, won't know Flutter hasn't been used in 6 months, won't find hardcoded API keys in your shell config, and won't know not to delete your SSH keys. That reasoning is what you're getting.
 
 ## Roadmap
 
