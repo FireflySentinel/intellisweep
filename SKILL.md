@@ -13,9 +13,22 @@ user confirmation.
 ## Mode Detection
 
 Check how the skill was invoked:
-- If the user said `/intellisweep --dry-run` or `/intellisweep -n` or "just scan" or "dry run":
-  run Phase 1 and Phase 2 only. Do NOT offer cleanup. End with the triage report.
-- Otherwise: run the full workflow (Phase 1 → Phase 2 → Phase 3).
+
+**Speed mode** (determines which audit steps to run):
+- Default: **fast mode**. Target < 2 minutes. Top-level scan, big wins, shell config.
+  Skips: scattered node_modules search, per-app cache measurement, shell history grep,
+  brew info JSON, individual staleness signals per tool.
+- `--deep`: **thorough mode**. Target < 5 minutes. Everything including find commands,
+  per-tool staleness signals, and shell history analysis.
+- Fast mode finds 80-90% of recoverable space. Recommend deep only if the user wants
+  to leave no stone unturned.
+
+**Cleanup mode:**
+- Default: full workflow (Phase 1 → Phase 2 → Phase 3).
+- `--dry-run` or `-n`: Phase 1 and Phase 2 only. No cleanup. End with triage report.
+
+Modes combine: `/intellisweep --dry-run` = fast scan, no cleanup.
+`/intellisweep --deep --dry-run` = thorough scan, no cleanup.
 
 ## Iron Rules (NEVER violate these)
 
@@ -49,40 +62,51 @@ findings will be things no catalog lists.
    These are often the biggest wins.
 
 Read `catalog.md` from the same directory as this skill file as a reference for
-known paths, security patterns, and modernization flags.
+safeguards (never touch), known patterns (recognize when found), and security patterns.
 
-Run these commands in parallel for speed (target: under 5 minutes):
+### FAST MODE (default, target < 2 minutes)
 
-### 1.1 Disk overview
+Run ALL of these commands in parallel (use multiple Bash tool calls in one message):
+
+**Batch 1 (run all at once):**
 ```bash
-df -h /
-du -sh ~/* 2>/dev/null | sort -hr | head -30
+# 1. Disk overview
+df -h / && du -sh ~/* 2>/dev/null | sort -hr | head -30
 ```
-
-### 1.2 Library breakdown
 ```bash
+# 2. Library breakdown
 du -sh ~/Library/*/ 2>/dev/null | sort -hr | head -20
 ```
-
-### 1.2b Deep dive into large Library subdirs
-For any Library subdirectory over 1GB, drill deeper:
 ```bash
+# 3. Deep dive into big Library subdirs
 du -sh ~/Library/Application\ Support/*/ 2>/dev/null | sort -hr | head -10
 du -sh ~/Library/Caches/*/ 2>/dev/null | sort -hr | head -10
 du -sh ~/Library/Containers/*/ 2>/dev/null | sort -hr | head -10
 ```
-
-**This is where discoveries happen.** You will find apps, games, containers, and
-caches that no catalog lists. For each item over 500MB that is NOT in catalog.md:
-- Identify what it is (app name from the bundle ID or directory name)
-- Check if the parent app is still installed
-- Check when it was last modified
-- Use your judgment: is this likely needed or is it cruft?
-- Include it in the triage report with your reasoning
-
-### 1.3 Dev tool detection
-Check which tools are installed:
 ```bash
+# 4. Shell config issues (dead PATHs + secrets)
+echo $PATH | tr ':' '\n' | while read p; do [ ! -d "$p" ] && echo "DEAD PATH: $p"; done
+grep -nE 'sk-[a-zA-Z0-9]{20,}|sk-ant-|ghp_[a-zA-Z0-9]{36}|AKIA[0-9A-Z]{16}|xoxb-|xoxp-|(API_KEY|SECRET|TOKEN|PASSWORD)=["'"'"'][^"'"'"']{8,}' ~/.zshrc ~/.bashrc ~/.zprofile ~/.zshrc.local ~/.bash_profile 2>/dev/null | sed 's/=.*/=<REDACTED>/'
+```
+
+That's it for fast mode. Four parallel commands. Results in ~30-60 seconds.
+
+**Then reason about what you found.** Cross-reference against catalog.md safeguards
+and knowledge base. For any item over 500MB not in the safeguard list:
+- Identify what it is
+- Use your judgment: needed or cruft?
+- Include in the triage report
+
+**IMPORTANT**: When reporting secrets, show file and line number only.
+NEVER echo the actual secret value in output.
+
+### DEEP MODE (--deep flag, target < 5 minutes)
+
+Run everything in fast mode PLUS these additional checks:
+
+**Batch 2 (after fast mode completes):**
+```bash
+# 5. Dev tool versions
 echo "brew: $(brew --version 2>/dev/null | head -1 || echo 'not installed')"
 echo "node: $(node --version 2>/dev/null || echo 'not installed')"
 echo "bun: $(bun --version 2>/dev/null || echo 'not installed')"
@@ -93,61 +117,29 @@ echo "go: $(go version 2>/dev/null || echo 'not installed')"
 echo "flutter: $(flutter --version 2>/dev/null | head -1 || echo 'not installed')"
 echo "docker: $(docker --version 2>/dev/null || echo 'not installed')"
 ```
-
-### 1.4 Package manager inventory
 ```bash
-brew list --formula 2>/dev/null | wc -l    # formula count
-brew list --cask 2>/dev/null               # cask list
+# 6. Brew inventory
+brew list --formula 2>/dev/null | wc -l
+brew list --cask 2>/dev/null
 ```
-
-### 1.5 Cache and runtime sizes
-For each path listed in catalog.md, check if it exists and measure its size:
 ```bash
-du -sh <path> 2>/dev/null
+# 7. Scattered node_modules (slow, uses find)
+find ~ -maxdepth 4 -name "node_modules" -type d 2>/dev/null
 ```
-Use `timeout 30` wrapper for directories that might be very large:
 ```bash
-timeout 30 du -sh <path> 2>/dev/null || echo "TIMEOUT: <path>"
+# 8. Python venvs
+find ~ -maxdepth 3 \( -name ".venv" -o -name "venv" \) -type d 2>/dev/null
 ```
-
-### 1.6 Staleness signals
-For each dev tool/SDK found, gather multiple signals. No single signal is
-authoritative on macOS/APFS (atime is unreliable). Use all available:
-
-- **Directory mtime**: `stat -f "%Sm" -t "%Y-%m-%d" <path>`
-- **Git activity**: If the tool has projects that use it, check `git log -1 --format="%ci"` in those project dirs
-- **Shell history**: `grep -c "<tool-name>" ~/.zsh_history 2>/dev/null` (recent invocations)
-- **Brew install date**: `brew info --json=v2 <formula> 2>/dev/null` (check installed_on)
-- **Config references**: `grep -l "<tool-path>" ~/.zshrc ~/.bashrc ~/.zprofile 2>/dev/null`
-
-Confidence levels:
-- **Confidently stale**: old mtime + no shell history + no git activity + no config reference
-- **Probably stale**: old mtime + some conflicting signals
-- **Probably active**: recent shell history OR recent git activity
-- **Active**: multiple recent signals
-
-### 1.7 Shell config analysis
-Parse shell config files for issues:
 ```bash
-# Dead PATH entries
-echo $PATH | tr ':' '\n' | while read p; do [ ! -d "$p" ] && echo "DEAD PATH: $p"; done
-
-# Hardcoded secrets (patterns from catalog.md)
-grep -nE '<patterns from catalog.md>' ~/.zshrc ~/.bashrc ~/.zprofile ~/.zshrc.local 2>/dev/null
+# 9. Staleness signals for each dev tool found
+# For each tool/SDK discovered in fast mode, gather:
+# - Directory mtime: stat -f "%Sm" -t "%Y-%m-%d" <path>
+# - Shell history: grep -c "<tool>" ~/.zsh_history 2>/dev/null
+# - Config references: grep -l "<path>" ~/.zshrc ~/.bashrc 2>/dev/null
 ```
-**IMPORTANT**: When reporting secrets, show the file, line number, and pattern type.
-NEVER show the actual secret value in output.
-
-### 1.8 Credential file scan
-Check common credential files listed in catalog.md. For each one that exists,
-flag it with age and whether it appears actively used.
-
-### 1.9 Application caches
-For each application cache path in catalog.md, measure size:
 ```bash
-du -sh ~/Library/Application\ Support/<app>/ 2>/dev/null
-du -sh ~/Library/Caches/<app>/ 2>/dev/null
-du -sh ~/Library/Containers/<app>/ 2>/dev/null
+# 10. Credential file ages
+ls -la ~/.netrc ~/.aws/credentials ~/.docker/config.json ~/.npmrc ~/.pypirc ~/.kube/config ~/.ssh/*.pub 2>/dev/null
 ```
 
 ## Phase 2: Triage

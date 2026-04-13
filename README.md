@@ -29,8 +29,9 @@ That's it. No build step, no dependencies.
 ## Usage
 
 ```
-/intellisweep              # Full scan + interactive cleanup
-/intellisweep --dry-run    # Scan only, no cleanup (show what it would find)
+/intellisweep              # Fast scan (< 2 min) + interactive cleanup
+/intellisweep --deep       # Thorough scan (< 5 min) + cleanup
+/intellisweep --dry-run    # Fast scan, no cleanup (just show findings)
 ```
 
 ## What it finds
