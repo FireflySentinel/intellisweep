@@ -15,45 +15,45 @@ user confirmation.
 When invoked, ask three quick questions to configure the run. If the user typed
 flags directly (--deep, --dry-run, -n), skip the relevant question(s).
 
-**Question 1: Action mode** (AskUserQuestion)
+**Question 1** (AskUserQuestion)
 
-question: "Scan only, or scan and clean?"
-header: "Action"
+question: "Looking around, or actually cleaning up today?"
+header: "Mode"
 options:
-  - label: "Scan and clean (recommended)"
-    description: "Find issues, then walk through cleanup interactively with your approval"
-  - label: "Scan only"
-    description: "Show findings, don't touch anything. Safe to run anytime."
+  - label: "Let's clean"
+    description: "Find the cruft, then I'll walk you through removing it. Nothing happens without your say-so."
+  - label: "Just looking"
+    description: "Show me what's taking space. Don't touch anything."
 
-**Question 2: Goal** (AskUserQuestion)
+**Question 2** (AskUserQuestion)
 
-question: "What's your main goal?"
+question: "What's bugging you?"
 header: "Goal"
 options:
-  - label: "Free disk space"
-    description: "Show biggest items first. Skip anything under 100MB."
-  - label: "Clean up dev environment"
-    description: "Broken configs, stale tools, dead references. Size doesn't matter."
-  - label: "Security check"
-    description: "Hardcoded secrets, old SSH keys, stale credentials. Skip non-security items."
-  - label: "Everything"
-    description: "Full report across all categories."
+  - label: "Running out of disk space"
+    description: "Biggest items first. If it's under 100MB, I won't bother you with it."
+  - label: "My dev environment is a mess"
+    description: "Broken configs, stale tools, dead PATH entries. Stuff that shouldn't be there."
+  - label: "Worried about security"
+    description: "Hardcoded secrets, old SSH keys, stale credentials. I'll check."
+  - label: "All of the above"
+    description: "Full checkup. Show me everything."
 
 Goal shapes the output:
-- **Free disk space** → sort triage by size descending, skip items < 100MB, lead with Tier 1
-- **Clean up dev environment** → lead with broken configs and stale tools, include 0-byte issues like dead PATH entries
-- **Security check** → only show security flags section, skip caches and stale tools entirely
-- **Everything** → full report, all categories, no filtering
+- **Running out of disk space** → sort triage by size descending, skip items < 100MB, lead with Tier 1
+- **My dev environment is a mess** → lead with broken configs and stale tools, include 0-byte issues like dead PATH entries
+- **Worried about security** → only show security flags section, skip caches and stale tools entirely
+- **All of the above** → full report, all categories, no filtering
 
-**Question 3: Scan depth** (AskUserQuestion)
+**Question 3** (AskUserQuestion)
 
-question: "How thorough?"
+question: "Quick pass or leave no stone unturned?"
 header: "Depth"
 options:
-  - label: "Quick scan (recommended)"
-    description: "< 2 min. Finds 80-90% of recoverable space. Big wins and obvious cruft."
-  - label: "Deep scan"
-    description: "< 5 min. Searches for scattered node_modules, checks staleness signals, audits credentials."
+  - label: "Quick pass"
+    description: "Under 2 minutes. Catches the big stuff. Good enough for most machines."
+  - label: "Turn every stone"
+    description: "Under 5 minutes. Hunts down scattered node_modules, checks tool freshness, audits credentials."
 
 ## Iron Rules (NEVER violate these)
 
