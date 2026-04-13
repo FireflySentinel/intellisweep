@@ -12,28 +12,34 @@ user confirmation.
 
 ## Mode Detection
 
-When invoked, immediately present a mode selection using AskUserQuestion:
+When invoked, ask two quick questions to configure the run. If the user typed
+flags directly (--deep, --dry-run, -n), skip the relevant question(s).
 
-question: "What would you like to do?"
-header: "Mode"
+**Question 1: Action mode** (AskUserQuestion)
+
+question: "Scan only, or scan and clean?"
+header: "Action"
 options:
-  - label: "Quick clean (recommended)"
-    description: "Fast scan (< 2 min), find big wins, clean interactively"
-  - label: "Deep clean"
-    description: "Thorough scan (< 5 min), leave no stone unturned, then clean"
-  - label: "Just scan"
-    description: "Quick scan, show findings, don't touch anything"
+  - label: "Scan and clean (recommended)"
+    description: "Find issues, then walk through cleanup interactively with your approval"
+  - label: "Scan only"
+    description: "Show findings, don't touch anything. Safe to run anytime."
+
+**Question 2: Scan depth** (AskUserQuestion)
+
+question: "How thorough?"
+header: "Depth"
+options:
+  - label: "Quick scan (recommended)"
+    description: "< 2 min. Finds 80-90% of recoverable space. Big wins and obvious cruft."
   - label: "Deep scan"
-    description: "Thorough scan, show findings, don't touch anything"
+    description: "< 5 min. Searches for scattered node_modules, checks staleness signals, audits credentials."
 
-Map the selection:
-- **Quick clean** → fast audit + Phase 2 + Phase 3
-- **Deep clean** → deep audit + Phase 2 + Phase 3
-- **Just scan** → fast audit + Phase 2 only (dry run)
-- **Deep scan** → deep audit + Phase 2 only (dry run)
-
-If the user typed flags directly (--deep, --dry-run, -n), skip the selection
-and map accordingly. Flags still work for power users.
+Map the selections:
+- Scan and clean + Quick → fast audit + Phase 2 + Phase 3
+- Scan and clean + Deep → deep audit + Phase 2 + Phase 3
+- Scan only + Quick → fast audit + Phase 2 only
+- Scan only + Deep → deep audit + Phase 2 only
 
 ## Iron Rules (NEVER violate these)
 
