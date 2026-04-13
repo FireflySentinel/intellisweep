@@ -41,8 +41,8 @@ That's it. No build step, no dependencies.
 | Broken configs | Dead PATH entries, broken lazy-loaders, references to deleted tools |
 | Large caches | Homebrew cache, Playwright browsers, npm/pnpm stores, Xcode derived data |
 | AI tool caches | Claude VM bundles, Cursor WebStorage, Copilot cache |
+| App data cruft | Orphaned containers from deleted apps, abandoned game data |
 | Security flags | Hardcoded API keys, old SSH keys, stale credential files |
-| Modernization | Deprecated tools (neofetch, NVM with broken hooks) |
 
 ## Safety
 
@@ -61,11 +61,13 @@ That's it. No build step, no dependencies.
 
 ## Roadmap
 
-**v1.0** (current) — macOS cleanup. Audit, triage, clean with backup safety model.
+**v1.0** (current) — macOS cleanup. Audit, triage, clean with backup safety model. Security alerts (flag-only).
 
 **v1.1** — Linux support. `catalog-linux.md` with XDG paths, apt/dnf/pacman detection. CONTRIBUTING.md for community catalog contributions.
 
-**v2.0** — Dev environment doctor. Persistent machine manifest (`~/.intellisweep/manifest.json`) that tracks your environment across runs. Security scanning (LaunchAgents, browser extensions, suspicious processes). "New Mac setup" mode. Cross-machine awareness.
+**v2.0** — `intellisweep modernize`. Tool swap workflows (NVM to fnm, pyenv to uv, neofetch to fastfetch). Config migration, shell config updates, project compatibility verification. Separated from cleanup because tool swaps are harder and riskier than deletions.
+
+**v3.0** — Dev environment doctor. Persistent machine manifest (`~/.intellisweep/manifest.json`) that tracks your environment across runs. Deep security scanning (LaunchAgents, browser extensions). "New Mac setup" mode. Cross-machine awareness.
 
 The long-term vision: IntelliSweep becomes Claude Code's understanding of the physical machine it runs on.
 

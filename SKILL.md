@@ -180,12 +180,6 @@ Present findings in a categorized report. Use a markdown table for each category
 |------|-----------|-------|------------|
 | ... | ~/.zshrc:18 | Hardcoded OpenAI API key | Rotate key, move to ~/.zshrc.local |
 
-**Modernization opportunities (FLAG ONLY — no auto-replace)**
-
-| Tool | Status | Modern replacement | Note |
-|------|--------|-------------------|------|
-| neofetch | Archived/deprecated | fastfetch | `brew install fastfetch` |
-
 ### Evidence string format
 - Stale tools: "last modified: {date}, {N} months ago; no shell history hits"
 - Broken configs: "shell error: {error text}" or "references {path} which does not exist"

@@ -150,21 +150,6 @@ Old credentials that haven't been rotated are a security risk.
 
 ---
 
-## MODERNIZATION FLAGS — Flag only, never auto-replace
-
-| Tool | Status | Replacement | How to detect |
-|------|--------|-------------|---------------|
-| neofetch | Archived (2024) | fastfetch | `which neofetch` |
-| nvm | Slow, broken hooks | fnm | `[ -d ~/.nvm ]` AND shell startup errors |
-| pyenv | Slow for version-only | uv | `which pyenv` AND only 1-2 versions |
-| yarn v1 | Legacy | pnpm or bun | `yarn --version` starts with `1.` |
-| bower | Abandoned | npm/pnpm | `which bower` |
-
-Only flag NVM if broken shell integration is detected (look for `_load_nvm` errors
-or shell startup warnings). Working NVM is fine.
-
----
-
 ## EXPLORATION HINTS — Where to look for big wins
 
 These aren't paths to check. They're patterns that tend to reveal hidden space hogs
