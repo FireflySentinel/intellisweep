@@ -123,18 +123,16 @@ Run ALL of these commands in parallel (use multiple Bash tool calls in one messa
 
 **Batch 1 (run all at once):**
 ```bash
-# 1. Disk overview
-df -h / && du -sh ~/* 2>/dev/null | sort -hr | head -30
+# 1. Disk overview (only items > 100MB to save tokens)
+df -h / && du -sh ~/* 2>/dev/null | sort -hr | awk 'NR<=20 && (/[0-9.]+G/ || (/M/ && $1+0>=100))'
 ```
 ```bash
-# 2. Library breakdown
-du -sh ~/Library/*/ 2>/dev/null | sort -hr | head -20
+# 2. Library breakdown (only > 100MB)
+du -sh ~/Library/*/ 2>/dev/null | sort -hr | awk '/[0-9.]+G/ || (/M/ && $1+0>=100)'
 ```
 ```bash
-# 3. Deep dive into big Library subdirs
-du -sh ~/Library/Application\ Support/*/ 2>/dev/null | sort -hr | head -10
-du -sh ~/Library/Caches/*/ 2>/dev/null | sort -hr | head -10
-du -sh ~/Library/Containers/*/ 2>/dev/null | sort -hr | head -10
+# 3. Deep dive into big Library subdirs (only > 200MB)
+du -sh ~/Library/Application\ Support/*/ ~/Library/Caches/*/ ~/Library/Containers/*/ 2>/dev/null | sort -hr | awk '/[0-9.]+G/ || (/M/ && $1+0>=200)'
 ```
 ```bash
 # 4. Shell config issues (dead PATHs + secrets)
@@ -171,17 +169,16 @@ echo "flutter: $(flutter --version 2>/dev/null | head -1 || echo 'not installed'
 echo "docker: $(docker --version 2>/dev/null || echo 'not installed')"
 ```
 ```bash
-# 6. Brew inventory
-brew list --formula 2>/dev/null | wc -l
-brew list --cask 2>/dev/null
+# 6. Brew inventory (count only for formulas, cask names are short)
+echo "Formulas: $(brew list --formula 2>/dev/null | wc -l | tr -d ' ')" && brew list --cask 2>/dev/null
 ```
 ```bash
-# 7. Scattered node_modules (slow, uses find)
-find ~ -maxdepth 4 -name "node_modules" -type d 2>/dev/null
+# 7. Scattered node_modules with sizes (limit output to top 10 by size)
+find ~ -maxdepth 4 -name "node_modules" -type d 2>/dev/null | head -20 | while read d; do du -sh "$d" 2>/dev/null; done | sort -hr | head -10
 ```
 ```bash
-# 8. Python venvs
-find ~ -maxdepth 3 \( -name ".venv" -o -name "venv" \) -type d 2>/dev/null
+# 8. Python venvs with sizes (limit to top 10)
+find ~ -maxdepth 3 \( -name ".venv" -o -name "venv" \) -type d 2>/dev/null | head -20 | while read d; do du -sh "$d" 2>/dev/null; done | sort -hr | head -10
 ```
 ```bash
 # 9. Staleness signals for each dev tool found
@@ -343,41 +340,12 @@ to free room for backups."
 
 ### Backup conventions
 
-All backups go to `~/.devclean-backup/YYYY-MM-DD/`.
+Backups go to `~/.devclean-backup/YYYY-MM-DD/` (append `-2`, `-3` if dir exists).
 
-If that directory already exists (second run on the same day), append a counter:
-`~/.devclean-backup/YYYY-MM-DD-2/`, `-3/`, etc.
-
-**Step 1: Write manifest FIRST (before any file copies)**
-```bash
-mkdir -p ~/.devclean-backup/YYYY-MM-DD
-```
-
-The manifest is a JSON file:
-```json
-{
-  "date": "2026-04-13T15:00:00Z",
-  "skill_version": "1.0.0",
-  "disk_before": "44GB free of 228GB",
-  "items": []
-}
-```
-
-For each item backed up, append to the items array:
-```json
-{
-  "original": "/Users/username/flutter",
-  "backup": "/Users/username/.devclean-backup/2026-04-13/flutter",
-  "size": "3.9G",
-  "risk": "moderate",
-  "category": "stale_dev_tool",
-  "evidence": "last modified: 2026-02-18, 2 months ago; no shell history"
-}
-```
-
-Write manifest after each item (not at the end) so partial runs are recoverable.
-
-If the manifest write fails (disk full, permissions), abort that item and warn the user.
+Write a `manifest.json` BEFORE copying files. Update it after each item (not at
+the end) so partial runs are recoverable. Manifest tracks: original path, backup
+path, size, risk level, and evidence string for each item. If the manifest write
+fails, abort that item and warn the user.
 
 **Step 2: Backup**
 ```bash
