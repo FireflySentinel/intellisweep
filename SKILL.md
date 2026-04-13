@@ -12,7 +12,7 @@ user confirmation.
 
 ## Mode Detection
 
-When invoked, ask two quick questions to configure the run. If the user typed
+When invoked, ask three quick questions to configure the run. If the user typed
 flags directly (--deep, --dry-run, -n), skip the relevant question(s).
 
 **Question 1: Action mode** (AskUserQuestion)
@@ -25,7 +25,27 @@ options:
   - label: "Scan only"
     description: "Show findings, don't touch anything. Safe to run anytime."
 
-**Question 2: Scan depth** (AskUserQuestion)
+**Question 2: Goal** (AskUserQuestion)
+
+question: "What's your main goal?"
+header: "Goal"
+options:
+  - label: "Free disk space"
+    description: "Show biggest items first. Skip anything under 100MB."
+  - label: "Clean up dev environment"
+    description: "Broken configs, stale tools, dead references. Size doesn't matter."
+  - label: "Security check"
+    description: "Hardcoded secrets, old SSH keys, stale credentials. Skip non-security items."
+  - label: "Everything"
+    description: "Full report across all categories."
+
+Goal shapes the output:
+- **Free disk space** → sort triage by size descending, skip items < 100MB, lead with Tier 1
+- **Clean up dev environment** → lead with broken configs and stale tools, include 0-byte issues like dead PATH entries
+- **Security check** → only show security flags section, skip caches and stale tools entirely
+- **Everything** → full report, all categories, no filtering
+
+**Question 3: Scan depth** (AskUserQuestion)
 
 question: "How thorough?"
 header: "Depth"
@@ -34,12 +54,6 @@ options:
     description: "< 2 min. Finds 80-90% of recoverable space. Big wins and obvious cruft."
   - label: "Deep scan"
     description: "< 5 min. Searches for scattered node_modules, checks staleness signals, audits credentials."
-
-Map the selections:
-- Scan and clean + Quick → fast audit + Phase 2 + Phase 3
-- Scan and clean + Deep → deep audit + Phase 2 + Phase 3
-- Scan only + Quick → fast audit + Phase 2 only
-- Scan only + Deep → deep audit + Phase 2 only
 
 ## Iron Rules (NEVER violate these)
 
