@@ -1,203 +1,179 @@
-# Cleanup Catalog — macOS
+# IntelliSweep Catalog — macOS
 
-This file is read by the /intellisweep skill during the audit phase. It contains the
-knowledge base of paths to scan, security patterns to detect, and tools to flag.
+This file defines what Claude Code must NEVER touch (safeguards), what it should
+recognize when it finds things (knowledge base), and what to flag proactively
+(security patterns, deprecations).
+
+The catalog is a reference, not a script. Claude Code explores the machine freely
+and uses this file to make informed decisions about what it discovers.
 
 Community contributions welcome. See CONTRIBUTING.md (coming soon).
 
-## Cache paths
+---
 
-Scan these directories. All are under user space (~/). Safe to delete — they
-regenerate on demand.
+## SAFEGUARDS — Never touch these
 
-### Package manager caches
-| Path | Tool | Notes |
-|------|------|-------|
-| `~/Library/Caches/Homebrew/` | Homebrew | Old downloads. `brew cleanup` equivalent |
-| `~/.npm/_cacache/` | npm | Package cache |
-| `~/Library/pnpm/` | pnpm | Content-addressable store |
-| `~/.bun/install/cache/` | bun | Package cache |
-| `~/Library/Caches/pip/` | pip | Python package cache |
-| `~/.cargo/registry/` | Cargo | Rust crate cache |
-| `~/go/pkg/mod/cache/` | Go | Module cache |
-| `~/.gradle/caches/` | Gradle | Build cache |
-| `~/.cocoapods/repos/` | CocoaPods | Spec repos |
-| `~/.gem/` | RubyGems | Gem cache |
-| `~/Library/Caches/Yarn/` | Yarn | Package cache |
+These paths must NEVER be deleted, modified, or suggested for removal. If Claude Code
+encounters them during exploration, skip them silently or note them as protected.
 
-### IDE and editor caches
-| Path | Tool | Notes |
-|------|------|-------|
-| `~/Library/Application Support/Cursor/Cache/` | Cursor | Browser cache |
-| `~/Library/Application Support/Cursor/CachedData/` | Cursor | Extension cache |
-| `~/Library/Application Support/Cursor/CachedExtensionVSIXs/` | Cursor | Old extension packages |
-| `~/Library/Application Support/Cursor/WebStorage/` | Cursor | Web storage |
-| `~/Library/Application Support/Code/Cache/` | VS Code | Browser cache |
-| `~/Library/Application Support/Code/CachedData/` | VS Code | Extension cache |
-| `~/Library/Application Support/Code/CachedExtensionVSIXs/` | VS Code | Old extension packages |
-| `~/Library/Application Support/Code/Service Worker/` | VS Code | Service worker cache |
-| `~/Library/Caches/JetBrains/` | JetBrains IDEs | Shared cache |
+### User data (destructive = unrecoverable)
+| Path | Why |
+|------|-----|
+| `~/Documents/` | User documents |
+| `~/Desktop/` | User desktop files |
+| `~/Pictures/` | User photos |
+| `~/Movies/` | User videos |
+| `~/Music/` | User music (iTunes/Apple Music library) |
+| `~/Zotero/` | Research library (academic users) |
 
-### Build tool caches
-| Path | Tool | Notes |
-|------|------|-------|
-| `~/Library/Developer/Xcode/DerivedData/` | Xcode | Build artifacts. Can be huge |
-| `~/Library/Developer/CoreSimulator/` | Xcode | iOS simulators |
-| `~/Library/Developer/Xcode/Archives/` | Xcode | Old app archives |
-| `~/Library/Developer/Xcode/iOS DeviceSupport/` | Xcode | Device support files |
-| `~/.android/cache/` | Android | Build cache |
-| `~/.gradle/wrapper/dists/` | Gradle | Wrapper distributions |
+### Active development (deletion = lost work)
+| Path | Why |
+|------|-----|
+| Any directory with a `.git/` and uncommitted changes | Active project with unsaved work |
+| Any directory with recent git commits (< 30 days) | Actively maintained project |
+| `~/Library/Application Support/*/User/` | IDE settings, keybindings, snippets (Cursor, VS Code, etc.) |
 
-### Browser and automation caches
-| Path | Tool | Notes |
-|------|------|-------|
-| `~/Library/Caches/ms-playwright/` | Playwright | Browser binaries |
-| `~/Library/Caches/camoufox/` | Camoufox | Browser automation |
-| `~/Library/Caches/Google/Chrome/` | Chrome | Browser cache |
-| `~/Library/Caches/Firefox/` | Firefox | Browser cache |
-| `~/Library/Caches/Cypress/` | Cypress | Test browser binaries |
+### Credentials and identity (deletion = lockout)
+| Path | Why |
+|------|-----|
+| `~/.ssh/` | SSH keys. Deletion = locked out of servers and Git. ALERT only, never delete. |
+| `~/.gnupg/` or `~/.gpg/` | GPG keys. Used for Git commit signing. |
+| `~/.aws/` | AWS credentials and config. ALERT only. |
+| `~/.kube/` | Kubernetes config. ALERT only. |
+| `~/.netrc` | HTTP auth credentials. ALERT only. |
+| `~/.docker/config.json` | Docker registry auth tokens. ALERT only. |
+| `~/.npmrc` | npm auth tokens. ALERT only. |
+| `~/.pypirc` | PyPI credentials. ALERT only. |
+| `~/Library/Keychains/` | macOS Keychain. System-critical. |
 
-### AI tool caches
-| Path | Tool | Notes |
-|------|------|-------|
-| `~/Library/Application Support/Claude/Cache/` | Claude Desktop | App cache |
-| `~/Library/Application Support/Claude/Code Cache/` | Claude Desktop | Code cache |
-| `~/Library/Application Support/GitHub Copilot/` | Copilot | Extension cache |
+### System and tool config (deletion = broken environment)
+| Path | Why |
+|------|-----|
+| `~/.claude/` | Claude Code config and skills. NEVER delete. |
+| `~/.gstack/` | gstack config and analytics. NEVER delete. |
+| `~/.zshrc`, `~/.bashrc`, `~/.zprofile`, `~/.bash_profile` | Shell configs. May EDIT to fix broken entries, never delete the file. |
+| `~/.gitconfig` | Git config. |
+| `~/.config/` (root level) | XDG config directory. Individual subdirs may be cleanable, but never delete the directory itself. |
+| `~/Library/Preferences/` | macOS app preferences. Deletion breaks app settings. |
+| `~/Library/Keychains/` | macOS Keychain data. |
 
-### Application caches (general)
-| Path | Tool | Notes |
-|------|------|-------|
-| `~/Library/Application Support/Slack/Cache/` | Slack | Regenerates automatically |
-| `~/Library/Application Support/Slack/Service Worker/` | Slack | Service worker cache |
-| `~/Library/Caches/com.spotify.client/` | Spotify | Music cache |
-| `~/Library/Application Support/discord/Cache/` | Discord | App cache |
-| `~/Library/Caches/node-gyp/` | node-gyp | Native addon build cache |
-| `~/Library/Caches/vscode-cpptools/` | cpptools | IntelliSense cache |
+### Active app data (deletion = data loss)
+| Path | Why |
+|------|-----|
+| `~/Library/Application Support/Claude/vm_bundles/` | Active VM bundle required for Claude Desktop. Only flag if MULTIPLE versions exist (suggest removing old ones, keeping the latest). If only one version, skip entirely. |
+| `~/Library/Application Support/Cursor/User/` | Cursor settings, extensions, keybindings. Keep this even when clearing Cursor caches. |
+| `~/Library/Application Support/Code/User/` | VS Code settings, extensions, keybindings. |
+| Any `~/Library/Containers/*/Data/` where the parent app is currently installed | App may need its container data. Check if the app is still in /Applications/ before suggesting removal. |
 
-### System caches
-| Path | Tool | Notes |
-|------|------|-------|
-| `~/Library/Logs/` | System | Log files. Check size before clearing |
-| `~/Library/Caches/com.apple.dt.Xcode/` | Xcode | Apple dev cache |
+### System paths (SIP-protected, cannot modify anyway)
+| Path | Why |
+|------|-----|
+| `/System/` | macOS system. SIP-protected. |
+| `/usr/` (except `/usr/local/`) | System binaries. |
+| `/Library/` (system-level) | System-level library. Requires sudo. |
+| `/Applications/` | Installed apps. Suggest uninstall via brew or app's own uninstaller, never `rm`. |
 
-## Dev tool and runtime paths
+---
 
-These are NOT caches. They are installed tools and SDKs. Removal means the tool
-is gone and must be reinstalled. Risk level: moderate.
+## KNOWLEDGE BASE — Recognize and advise
 
-### Version managers and runtimes
-| Path | Tool | Check |
-|------|------|-------|
-| `~/.nvm/` | NVM (Node) | Check `nvm ls` for installed versions |
-| `~/.fnm/` | fnm (Node) | Check `fnm ls` |
-| `~/.pyenv/` | pyenv (Python) | Check `pyenv versions` |
-| `~/.cargo/` | Rust | Entire Rust toolchain |
-| `~/go/` | Go | GOPATH workspace |
-| `~/flutter/` | Flutter SDK | Check `flutter --version` |
-| `~/Library/Android/sdk/` | Android SDK | Check for Android Studio |
-| `~/.cocoapods/` | CocoaPods | Spec repos + gem |
-| `~/.rbenv/` | rbenv (Ruby) | Check `rbenv versions` |
-| `~/miniconda3/` | Miniconda | Python env manager |
-| `~/anaconda3/` | Anaconda | Full Python distribution |
-| `/opt/homebrew/anaconda3/` | Anaconda (brew) | Brew-installed Anaconda |
-| `/opt/anaconda3/` | Anaconda | System-level install |
-| `~/.bun/` | Bun | Runtime + package manager |
+When Claude Code discovers these during exploration, use this info to provide
+informed cleanup advice. This is NOT a scan checklist. Claude Code may find items
+not listed here and should use its own judgment for those.
 
-### Containers and VMs
-| Path | Tool | Check |
-|------|------|-------|
-| `~/OrbStack/` | OrbStack | Docker alternative |
-| `~/.docker/` | Docker | Docker config + data |
-| `~/Library/Containers/com.docker.docker/` | Docker Desktop | Container data |
+### Cache patterns (Safe risk — regenerates on demand)
+| Pattern | What it is | Safe to delete? |
+|---------|-----------|-----------------|
+| `~/Library/Caches/*/` | App caches | Yes, apps regenerate them |
+| `~/Library/Caches/Homebrew/` | Brew downloads | Yes. Equivalent of `brew cleanup` |
+| `~/.npm/_cacache/` | npm package cache | Yes |
+| `~/Library/pnpm/` | pnpm content store | Yes, but active projects may need reinstall |
+| `~/.bun/install/cache/` | bun cache | Yes |
+| `~/Library/Caches/pip/` | pip cache | Yes |
+| `~/.cargo/registry/` | Rust crate cache | Yes, redownloads on build |
+| `~/go/pkg/mod/cache/` | Go module cache | Yes |
+| `~/.gradle/caches/` | Gradle cache | Yes, rebuilds on next build |
+| `~/Library/Caches/ms-playwright/` | Playwright browsers | Yes, redownloads on test run |
+| `~/Library/Developer/Xcode/DerivedData/` | Xcode build artifacts | Yes. Can be huge. |
+| `~/Library/Developer/CoreSimulator/` | iOS simulators | Yes if not doing iOS dev |
+| `*/node_modules/` | npm/pnpm/bun deps | Yes if lockfile exists (reinstall with `npm i`) |
+| IDE `Cache/`, `CachedData/`, `CachedExtensionVSIXs/`, `WebStorage/`, `Service Worker/` | Editor caches | Yes. Keep `User/` directory (settings). |
+| `~/Library/Logs/` | System logs | Generally safe. Check size first. |
 
-## Scattered node_modules
+### Dev tool patterns (Moderate risk — requires reinstall)
+| Pattern | What to check |
+|---------|--------------|
+| `~/.nvm/`, `~/.fnm/`, `~/.pyenv/`, `~/.rbenv/` | Version managers. Check how many versions installed, when last used. |
+| `~/.cargo/` (whole dir, not just registry) | Full Rust toolchain. Only suggest if user confirms no Rust projects. |
+| `~/flutter/` | Flutter SDK. Check git log for last activity. |
+| `~/Library/Android/sdk/` | Android SDK. Check if Android Studio or Flutter is actively used. |
+| `~/anaconda3/`, `~/miniconda3/`, `/opt/homebrew/anaconda3/` | Python distributions. Check if conda is referenced in shell config. |
+| `~/OrbStack/` | Docker alternative data. Only if not using Docker. |
+| `~/.cocoapods/` | CocoaPods. Only needed for iOS/Flutter dev. |
 
-Search for `node_modules` directories in projects. These can be reinstalled with
-`npm install` / `pnpm install` / `bun install`.
+### App container patterns (Moderate to Destructive)
+| Pattern | What to check |
+|---------|--------------|
+| `~/Library/Containers/*/` | Sandboxed app data. Check if parent app is still installed. If app was deleted, container data is orphaned and safe to remove. |
+| `~/Library/Application Support/*/` | App data. Some is cache (safe), some is user data (destructive). Check subdirectory names for `Cache`, `Caches`, `WebStorage` vs `User`, `Data`, `Library`. |
+| `~/Library/Application Support/Steam/` | Game data. Only if user isn't gaming on this machine. |
 
-```bash
-find ~ -maxdepth 4 -name "node_modules" -type d 2>/dev/null
-```
+---
 
-For each found, report:
-- Parent project path
-- Size of node_modules
-- Last modified date of parent project
-- Whether a lockfile exists (package-lock.json, pnpm-lock.yaml, bun.lockb)
-
-## Security patterns
+## SECURITY PATTERNS — Alert only, never remediate
 
 ### Secret detection regex
 
-Scan these files: `~/.zshrc`, `~/.bashrc`, `~/.zprofile`, `~/.zshrc.local`,
+Scan shell config files: `~/.zshrc`, `~/.bashrc`, `~/.zprofile`, `~/.zshrc.local`,
 `~/.bash_profile`, `~/.profile`
 
-Patterns (case-insensitive where noted):
-| Pattern | Type | Example |
-|---------|------|---------|
-| `sk-[a-zA-Z0-9]{20,}` | OpenAI API key | `sk-proj-abc123...` |
-| `sk-ant-[a-zA-Z0-9-]{20,}` | Anthropic API key | `sk-ant-api03-...` |
-| `ghp_[a-zA-Z0-9]{36}` | GitHub personal access token | `ghp_abc123...` |
-| `gho_[a-zA-Z0-9]{36}` | GitHub OAuth token | `gho_abc123...` |
-| `AKIA[0-9A-Z]{16}` | AWS access key ID | `AKIAIOSFODNN7EXAMPLE` |
-| `xoxb-[0-9-]+` | Slack bot token | `xoxb-123-456-abc` |
-| `xoxp-[0-9-]+` | Slack user token | `xoxp-123-456-abc` |
-| `(API_KEY\|SECRET\|TOKEN\|PASSWORD\|PRIVATE_KEY)=["'][^"']{8,}["']` | Generic secret assignment | `API_KEY="abc123..."` |
+| Pattern | Type |
+|---------|------|
+| `sk-[a-zA-Z0-9]{20,}` | OpenAI API key |
+| `sk-ant-[a-zA-Z0-9-]{20,}` | Anthropic API key |
+| `ghp_[a-zA-Z0-9]{36}` | GitHub personal access token |
+| `gho_[a-zA-Z0-9]{36}` | GitHub OAuth token |
+| `AKIA[0-9A-Z]{16}` | AWS access key ID |
+| `xoxb-[0-9-]+` | Slack bot token |
+| `xoxp-[0-9-]+` | Slack user token |
+| `(API_KEY\|SECRET\|TOKEN\|PASSWORD\|PRIVATE_KEY)=["'][^"']{8,}["']` | Generic secret |
 
 **IMPORTANT**: Report file path and line number only. NEVER echo the actual secret value.
 
-### Credential files
+### SSH key audit
+Flag keys where: `.pub` file mtime > 2 years AND not referenced in `~/.ssh/config`.
+Flag RSA keys < 2048 bits as weak.
 
-Check if these exist and report their age:
-| Path | Type | Risk |
-|------|------|------|
-| `~/.netrc` | HTTP credentials (git, curl) | Flag if exists |
-| `~/.aws/credentials` | AWS credentials | Flag if exists |
-| `~/.docker/config.json` | Docker registry auth | Flag if contains `auth` key |
-| `~/.npmrc` | npm registry auth | Flag if contains `_authToken` |
-| `~/.pypirc` | PyPI credentials | Flag if exists |
-| `~/.kube/config` | Kubernetes config | Flag if contains `token` or `client-certificate` |
+### Credential file age
+For each file in the Safeguards credential list that exists, report its age.
+Old credentials that haven't been rotated are a security risk.
 
-### SSH keys
+---
 
-```bash
-ls -la ~/.ssh/*.pub 2>/dev/null
-```
+## MODERNIZATION FLAGS — Flag only, never auto-replace
 
-For each key, report:
-- Key file name and age (mtime of .pub file)
-- Whether it's referenced in `~/.ssh/config`
-- Whether it's an RSA key < 2048 bits (weak)
-
-Flag keys where: .pub mtime > 2 years AND not referenced in ~/.ssh/config.
-
-## Modernization flags
-
-These tools are deprecated or have better modern alternatives. Flag them if
-installed but do NOT auto-replace in MVP.
-
-| Tool | Status | Replacement | Detection |
-|------|--------|-------------|-----------|
+| Tool | Status | Replacement | How to detect |
+|------|--------|-------------|---------------|
 | neofetch | Archived (2024) | fastfetch | `which neofetch` |
-| nvm | Slow, broken shell hooks | fnm | `[ -d ~/.nvm ]` AND errors in shell init |
-| pyenv | Slow for version-only use | uv | `which pyenv` AND only system + 1 version |
+| nvm | Slow, broken hooks | fnm | `[ -d ~/.nvm ]` AND shell startup errors |
+| pyenv | Slow for version-only | uv | `which pyenv` AND only 1-2 versions |
 | yarn v1 | Legacy | pnpm or bun | `yarn --version` starts with `1.` |
 | bower | Abandoned | npm/pnpm | `which bower` |
 
 Only flag NVM if broken shell integration is detected (look for `_load_nvm` errors
-or shell startup warnings).
+or shell startup warnings). Working NVM is fine.
 
-## AI-era tools (special handling)
+---
 
-These are unique to the AI development era. No existing cleanup tool knows about them.
+## EXPLORATION HINTS — Where to look for big wins
 
-| Path | Tool | Notes |
-|------|------|-------|
-| `~/Library/Application Support/Claude/vm_bundles/` | Claude Desktop | Linux VM for sandboxed execution. 10-12GB. Only one version needed. DO NOT delete the active version. Only flag if multiple versions exist. |
-| `~/Library/Application Support/Cursor/` | Cursor IDE | Check Cache, CachedData, CachedExtensionVSIXs, WebStorage subdirs. Keep User/ (settings). |
-| `~/.claude/` | Claude Code | Config and skills. DO NOT delete. Only flag if > 500MB (unusual). |
-| `~/.gstack/` | gstack | Config and analytics. DO NOT delete. |
+These aren't paths to check. They're patterns that tend to reveal hidden space hogs
+during discovery. Claude Code should explore these areas and use judgment.
 
-**WARNING for Claude VM bundles**: The active VM bundle is required for Claude Desktop
-to work. Only suggest cleanup if there are multiple versions. If only one exists,
-skip it entirely with a note: "Claude VM bundle (XGB) — active, do not remove."
+- `du -sh ~/Library/Application\ Support/*/` — app data often grows silently (Slack 1.4GB, Steam 1.9GB)
+- `du -sh ~/Library/Containers/*/` — sandboxed apps can accumulate GB of data (games, messaging apps)
+- `find ~ -maxdepth 4 -name "node_modules" -type d` — scattered across old projects
+- `find ~ -maxdepth 3 -name ".venv" -o -name "venv"` — Python virtual environments in old projects
+- `brew list --cask` — installed GUI apps, some may be abandoned
+- `brew list --formula | wc -l` — if > 100, likely has unused formulas
+- `ls ~/Downloads/` — forgotten downloads, old installers
