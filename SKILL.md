@@ -114,8 +114,23 @@ findings will be things no catalog lists.
    Check what the app/tool is, when it was last used, whether it's still needed.
    These are often the biggest wins.
 
-Read `catalog.md` from the same directory as this skill file as a reference for
-safeguards (never touch), known patterns (recognize when found), and security patterns.
+**Detect platform and load the right catalog:**
+```bash
+_PLATFORM=$(uname -s 2>/dev/null || echo "Unknown")
+echo "PLATFORM: $_PLATFORM"
+```
+
+Map the result:
+- `Darwin` → read `catalog-macos.md`
+- `Linux` → read `catalog-linux.md`
+- `MINGW*` or `MSYS*` or Windows → read `catalog-windows.md`
+
+If the catalog file for the detected platform doesn't exist, warn:
+"No catalog for [platform] yet. Running in discovery-only mode (no safeguard
+list). Be extra careful with deletions."
+
+The catalog provides safeguards (never touch), known patterns (recognize when found),
+and security patterns.
 
 ### FAST MODE (default, target < 2 minutes)
 
