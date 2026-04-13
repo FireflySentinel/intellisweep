@@ -36,8 +36,20 @@ Check how the skill was invoked:
 
 ## Phase 1: Audit
 
-Read `catalog.md` from the same directory as this skill file for the full list of
-paths, patterns, and tools to check.
+**Discovery-first, not checklist-first.** The catalog is a reference, not a script.
+Your primary job is to EXPLORE the machine and REASON about what you find. The catalog
+helps you recognize known items and provide informed advice, but the most valuable
+findings will be things no catalog lists.
+
+**Audit strategy:**
+1. Explore first (steps 1.1-1.2): discover what's actually taking space
+2. Cross-reference: match discoveries against catalog.md for known cleanup advice
+3. Investigate unknowns: for large items NOT in the catalog, use your judgment.
+   Check what the app/tool is, when it was last used, whether it's still needed.
+   These are often the biggest wins.
+
+Read `catalog.md` from the same directory as this skill file as a reference for
+known paths, security patterns, and modernization flags.
 
 Run these commands in parallel for speed (target: under 5 minutes):
 
@@ -51,6 +63,22 @@ du -sh ~/* 2>/dev/null | sort -hr | head -30
 ```bash
 du -sh ~/Library/*/ 2>/dev/null | sort -hr | head -20
 ```
+
+### 1.2b Deep dive into large Library subdirs
+For any Library subdirectory over 1GB, drill deeper:
+```bash
+du -sh ~/Library/Application\ Support/*/ 2>/dev/null | sort -hr | head -10
+du -sh ~/Library/Caches/*/ 2>/dev/null | sort -hr | head -10
+du -sh ~/Library/Containers/*/ 2>/dev/null | sort -hr | head -10
+```
+
+**This is where discoveries happen.** You will find apps, games, containers, and
+caches that no catalog lists. For each item over 500MB that is NOT in catalog.md:
+- Identify what it is (app name from the bundle ID or directory name)
+- Check if the parent app is still installed
+- Check when it was last modified
+- Use your judgment: is this likely needed or is it cruft?
+- Include it in the triage report with your reasoning
 
 ### 1.3 Dev tool detection
 Check which tools are installed:
