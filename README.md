@@ -51,14 +51,14 @@ Type `/intellisweep` in Claude Code. Three quick questions configure the run:
 2. **What's bugging you?** — disk space, messy environment, security, or all of the above
 3. **Quick or deep?** — under 2 minutes for big wins, under 5 for everything
 
-Safe items (caches) can be batch-cleaned in one approval. Moderate and destructive items require individual confirmation. Backups are created before anything irreversible.
+Safe items (caches) can be batch-cleaned in one approval. Moderate items require individual confirmation with the reinstall command shown upfront. Everything is logged.
 
 ## Principles
 
 - **Open source, free forever.** No ads, no VIP tiers, no subscription. MIT licensed.
 - **No cleanup theater.** Every finding shows permanence. We'd rather show 4GB of real wins than 12GB that refills by Tuesday.
 - **Nothing is a black box.** You see every command before it runs. You know exactly what's being removed and why.
-- **Everything is reversible.** Backup with manifest before any destructive operation. One command to restore.
+- **Every deletion is logged.** A log records what was removed, how big it was, and how to reinstall it. The log is the safety net, not a backup that doubles your disk usage.
 - **Your data stays on your machine.** No telemetry, no analytics, no phoning home. The source is a few text files you can read in 5 minutes.
 - **No fear-based messaging.** Your machine isn't "at risk" because it has a browser cache. We tell you what's there and let you decide.
 
@@ -81,11 +81,10 @@ Add paths for tools not yet covered by editing `catalog.md` and submitting a PR.
 rm -rf ~/.claude/skills/intellisweep
 ```
 
-To also remove backup data and reports:
+To also remove logs:
 
 ```bash
-rm -rf ~/.devclean-backup
-rm -f ~/.devclean-report-*.md
+rm -rf ~/.intellisweep
 ```
 
 ## License

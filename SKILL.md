@@ -86,17 +86,15 @@ options:
 ## Iron Rules (NEVER violate these)
 
 1. **Never delete without confirmation.** Show the exact command before running it.
-   Ask the user to confirm. One item at a time. Never batch multiple deletions into
-   one confirmation.
+   Safe items can be batch-confirmed. Moderate items need individual confirmation.
 2. **Never touch credential files.** Security findings are ALERT-ONLY. Flag the file
    and line number. Suggest the user rotate the secret. Never delete, redact, or
    modify credential files, SSH keys, or .env files.
 3. **Never touch SIP-protected paths.** Only operate on user-space paths (`~/`,
    `~/Library/`). Never attempt to modify anything under `/System/`, `/usr/`,
    `/Library/` (system-level), or other root-owned paths.
-4. **Always back up moderate/destructive items before deletion.** Write the manifest
-   first, then copy, then confirm, then delete. If the manifest write fails, abort
-   that item.
+4. **Log everything deleted.** Write to `~/.intellisweep/log-YYYY-MM-DD.md` with
+   the item path, size, and how to reinstall. The log is the safety net.
 5. **Degrade gracefully.** If a tool is missing (brew, git), skip checks that need
    it. Never crash. Always report what was skipped and why.
 
@@ -331,145 +329,78 @@ Orphans are permanent wins. They never refill. Add them to the Permanent wins ti
 
 ## Phase 3: Action
 
-### Batch safe items
+No backups. No moving files around. Just delete and log.
 
-Safe-risk items (caches that regenerate) do NOT need individual confirmation.
-Present them as a batch:
+Caches regenerate. SDKs reinstall from source. Copying 7GB of Android SDK to
+another directory on the same disk before deleting it is absurd.
 
-"Found N safe items totaling XGB (caches, derived data). These all regenerate
-on demand. Clean all at once?"
-  → [Clean all safe items] [Let me pick] [Skip safe items]
+### Before starting
 
-If "Clean all safe items": delete them all, show running total of space freed.
-If "Let me pick": fall back to per-item confirmation.
-If "Skip": move to moderate items.
-
-This respects the user's time. Nobody needs to approve 12 cache deletions one by one.
-
-### Moderate and destructive items (one by one)
-
-These still require individual confirmation:
-
-1. **Moderate items** — for each item:
-   a. Write manifest entry
-   b. Copy to backup (`cp -a`)
-   c. Show the exact rm command
-   d. Ask for confirmation
-   e. Execute deletion
-   f. Show space freed so far
-2. **Destructive items** — same as moderate but with double confirmation:
-   "This item may contain data that cannot be recovered from backup alone.
-   Are you sure?"
-
-### Live before/after feedback
-
-Show disk space after EVERY deletion, not just in the final report:
-```bash
-df -h / | tail -1 | awk '{print "Free: "$4}'
-```
-
-The user should feel the progress. "Free: 24GB... Free: 28GB... Free: 31GB..."
-This is the honest version of a progress bar.
-
-### Pre-flight check
-
-Before starting any deletions:
 ```bash
 echo "BEFORE:" && df -h / | tail -1 | awk '{print "Free: "$4}'
 ```
 
-If free space is < 1GB, warn: "Very low disk space. Will clean safe items first
-to free room for backups."
+### Safe items (batch)
 
-### Backup conventions
+Safe items (caches) do NOT need individual confirmation:
 
-Backups go to `~/.devclean-backup/YYYY-MM-DD/` (append `-2`, `-3` if dir exists).
+"Found N safe items totaling XGB (caches, derived data). These all regenerate
+on demand. Clean all at once?"
+  → [Clean all] [Let me pick] [Skip]
 
-Write a `manifest.json` BEFORE copying files. Update it after each item (not at
-the end) so partial runs are recoverable. Manifest tracks: original path, backup
-path, size, risk level, and evidence string for each item. If the manifest write
-fails, abort that item and warn the user.
+### Moderate items (confirm each)
 
-**Step 2: Backup**
-```bash
-cp -a <original-path> ~/.devclean-backup/YYYY-MM-DD/<item-name>/
-```
-Use `cp -a` to preserve permissions, timestamps, and extended attributes.
+Show the exact command for each item, wait for confirmation:
 
-**Step 3: Confirm and delete**
-Show the exact command:
 ```
 Will run: rm -rf /Users/username/flutter
-This will free approximately 3.9GB.
-Backed up to: ~/.devclean-backup/2026-04-13/flutter/
-Confirm? (the user must say yes)
+This frees approximately 3.9GB.
+To reinstall later: brew install flutter
+Confirm?
 ```
 
-**Step 4: After each deletion**
+Where possible, include the reinstall command. This IS the "undo."
+
+### After each deletion
+
+Show live progress:
 ```bash
-echo "Freed:" && df -h / | tail -1 | awk '{print "Free: "$4}'
+df -h / | tail -1 | awk '{print "Free: "$4}'
 ```
 
 ### Shell config cleanup
 
-When cleaning dead PATH entries or broken lazy-load functions from shell configs:
+When cleaning dead PATH entries or broken lazy-load functions:
 1. Show the exact lines that will be removed
-2. Show what the file will look like after the change
-3. Use the Edit tool (not sed/awk) for safe, reviewable changes
-4. Never modify lines that aren't broken
+2. Show what the file looks like after
+3. Use the Edit tool for safe, reviewable changes
 
-### Report
+### Log
 
-After all actions complete, generate a markdown report.
-
-Write to `~/.devclean-report-YYYY-MM-DD.md` using the Write tool:
+After all actions, write a deletion log to `~/.intellisweep/log-YYYY-MM-DD.md`:
 
 ```markdown
-# intellisweep report — YYYY-MM-DD
+# intellisweep — YYYY-MM-DD
 
 Disk: XGB free → YGB free (+ZGB recovered)
 Items: N found, M cleaned, K skipped
 
-## Permanent wins (gone forever)
-| Item | Size | Evidence |
-|------|------|----------|
+## Deleted
+| Item | Size | Permanence | How to reinstall |
+|------|------|------------|------------------|
+| ~/flutter | 3.9GB | Permanent | brew install flutter |
+| ~/Library/Caches/Homebrew | 1.1GB | Long-lasting | refills on next brew install |
 
-## Long-lasting wins (refills only on active use)
-| Item | Size | Evidence |
-|------|------|----------|
+## Skipped
+| Item | Size | Reason |
+|------|------|--------|
+| Cursor cache | 1.5GB | User declined |
 
-## Temporary wins (refills within days)
-| Item | Size | Evidence | Note |
-|------|------|----------|------|
-
-## Security alerts
-| File:Line | Issue | Action needed |
-|-----------|-------|---------------|
-
-## Backup
-Location: ~/.devclean-backup/YYYY-MM-DD/
-Restore: cp -a ~/.devclean-backup/YYYY-MM-DD/<item> <original-path>
+## Security alerts (action needed)
+| File:Line | Issue | What to do |
+|-----------|-------|------------|
+| ~/.zshrc:18 | OpenAI key | Rotate, move to ~/.zshrc.local |
 ```
 
-Tell the user where the report is. It renders natively on GitHub, VS Code,
-and any markdown viewer.
-
-### Backup management
-
-If `~/.devclean-backup/` total size exceeds 1GB, suggest:
-"Your cleanup backups are using {size}. Run `/intellisweep prune` to remove backups
-older than 7 days."
-
-When the user runs `/intellisweep prune`:
-```bash
-find ~/.devclean-backup/ -maxdepth 1 -type d -mtime +7
-```
-Show what will be removed, confirm, then delete.
-
-### Restore
-
-If the user asks to restore something:
-1. Read the manifest.json from the most recent backup
-2. Show the available items
-3. For the selected item, run: `cp -a <backup-path> <original-path>`
-4. Verify the restore worked: `ls -la <original-path>`
+The log is the safety net. If you deleted something you need, the "How to
+reinstall" column tells you exactly what to do. No backup restoration needed.
