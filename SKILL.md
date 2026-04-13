@@ -12,23 +12,28 @@ user confirmation.
 
 ## Mode Detection
 
-Check how the skill was invoked:
+When invoked, immediately present a mode selection using AskUserQuestion:
 
-**Speed mode** (determines which audit steps to run):
-- Default: **fast mode**. Target < 2 minutes. Top-level scan, big wins, shell config.
-  Skips: scattered node_modules search, per-app cache measurement, shell history grep,
-  brew info JSON, individual staleness signals per tool.
-- `--deep`: **thorough mode**. Target < 5 minutes. Everything including find commands,
-  per-tool staleness signals, and shell history analysis.
-- Fast mode finds 80-90% of recoverable space. Recommend deep only if the user wants
-  to leave no stone unturned.
+question: "What would you like to do?"
+header: "Mode"
+options:
+  - label: "Quick clean (recommended)"
+    description: "Fast scan (< 2 min), find big wins, clean interactively"
+  - label: "Deep clean"
+    description: "Thorough scan (< 5 min), leave no stone unturned, then clean"
+  - label: "Just scan"
+    description: "Quick scan, show findings, don't touch anything"
+  - label: "Deep scan"
+    description: "Thorough scan, show findings, don't touch anything"
 
-**Cleanup mode:**
-- Default: full workflow (Phase 1 → Phase 2 → Phase 3).
-- `--dry-run` or `-n`: Phase 1 and Phase 2 only. No cleanup. End with triage report.
+Map the selection:
+- **Quick clean** → fast audit + Phase 2 + Phase 3
+- **Deep clean** → deep audit + Phase 2 + Phase 3
+- **Just scan** → fast audit + Phase 2 only (dry run)
+- **Deep scan** → deep audit + Phase 2 only (dry run)
 
-Modes combine: `/intellisweep --dry-run` = fast scan, no cleanup.
-`/intellisweep --deep --dry-run` = thorough scan, no cleanup.
+If the user typed flags directly (--deep, --dry-run, -n), skip the selection
+and map accordingly. Flags still work for power users.
 
 ## Iron Rules (NEVER violate these)
 
