@@ -1,36 +1,39 @@
 # intellisweep
 
-AI-powered dev environment cleanup for Mac. A Claude Code skill that replaces crappy cleaner apps.
+AI-powered dev environment cleanup for Mac. A [Claude Code](https://claude.ai/download) skill.
 
 ## Table of contents
 
-- [The story](#the-story)
 - [What it does](#what-it-does)
+- [How it works](#how-it-works)
 - [Install](#install)
 - [Usage](#usage)
-- [What it finds](#what-it-finds)
 - [Principles](#principles)
 - [Requirements](#requirements)
-- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [Uninstall](#uninstall)
 - [License](#license)
 
-## The story
-
-For 10 years I used ad-filled Mac cleaner apps to free disk space. Then I asked Claude Code to clean my machine. In one conversation it recovered 36GB by detecting stale tools (Flutter unused for months), broken configs (NVM with shell errors), abandoned package managers (Anaconda never activated), and flagged a hardcoded API key in my .zshrc. It replaced NVM with fnm, cleaned dead shell references, and modernized my dev environment.
-
-No static script could do this. This skill packages that experience.
-
 ## What it does
 
-- Audits installed dev tools, caches, configs, and credential files
-- Detects stale tools by checking git activity, shell history, and file timestamps
-- Identifies broken configurations by analyzing shell output
-- Flags security issues (hardcoded secrets, old SSH keys)
-- Presents findings in risk-tiered categories with evidence
-- Cleans only with explicit confirmation, one item at a time
-- Backs up before destructive operations with manifest-based restore
+Finds stale dev tools, broken configs, orphaned app data, large caches, and hardcoded secrets on your Mac. Tells you what's permanent and what refills tomorrow. Cleans with your approval, one item at a time.
+
+| Category | Examples |
+|----------|---------|
+| Stale dev tools | SDKs unused for months, runtimes with no recent activity |
+| Broken configs | Dead PATH entries, lazy-loaders referencing deleted binaries |
+| Orphaned app data | Containers and support files from apps you already deleted |
+| Large caches | Homebrew, Playwright, npm/pnpm stores, Xcode derived data |
+| AI tool caches | Claude VM bundles, Cursor WebStorage, Copilot cache |
+| Security flags | Hardcoded API keys in shell config, old SSH keys, stale credentials |
+
+## How it works
+
+IntelliSweep explores your machine instead of checking a static list. It runs `du` across your home directory and Library, finds what's actually taking space, then reasons about each item: when was it last used? Is the parent app still installed? Is the config referencing something that no longer exists?
+
+Findings are sorted by permanence, not size. A 500MB stale SDK that's gone forever ranks above a 2GB browser cache that refills by tomorrow.
+
+A safeguard list protects things that must never be touched: your documents, SSH keys, active project data, IDE settings, and credentials. Everything outside the safeguards is fair game for discovery.
 
 ## Install
 
@@ -38,35 +41,26 @@ No static script could do this. This skill packages that experience.
 git clone https://github.com/FireflySentinel/intellisweep.git ~/.claude/skills/intellisweep
 ```
 
-That's it. No build step, no dependencies.
+No build step, no dependencies.
 
 ## Usage
 
-```
-/intellisweep              # Fast scan (< 2 min) + interactive cleanup
-/intellisweep --deep       # Thorough scan (< 5 min) + cleanup
-/intellisweep --dry-run    # Fast scan, no cleanup (just show findings)
-```
+Type `/intellisweep` in Claude Code. Three quick questions configure the run:
 
-## What it finds
+1. **Scan only or clean?** — choose whether to just look or actually remove things
+2. **What's bugging you?** — disk space, messy environment, security, or all of the above
+3. **Quick or deep?** — under 2 minutes for big wins, under 5 for everything
 
-| Category | Examples |
-|----------|---------|
-| Stale dev tools | Flutter SDK unused for 6 months, Android SDK with no IDE |
-| Broken configs | Dead PATH entries, broken lazy-loaders, references to deleted tools |
-| Large caches | Homebrew cache, Playwright browsers, npm/pnpm stores, Xcode derived data |
-| AI tool caches | Claude VM bundles, Cursor WebStorage, Copilot cache |
-| App data cruft | Orphaned containers from deleted apps, abandoned game data |
-| Security flags | Hardcoded API keys, old SSH keys, stale credential files |
+Safe items (caches) can be batch-cleaned in one approval. Moderate and destructive items require individual confirmation. Backups are created before anything irreversible.
 
 ## Principles
 
 - **Open source, free forever.** No ads, no VIP tiers, no subscription. MIT licensed.
 - **No cleanup theater.** Every finding shows permanence. We'd rather show 4GB of real wins than 12GB that refills by Tuesday.
-- **Nothing is a black box.** You see every command before it runs. You know exactly what's being removed and why. No progress bars hiding mystery deletions.
-- **Everything is reversible.** Backup with manifest before any destructive operation. One command to restore. If you regret something, undo it.
-- **Your data stays on your machine.** No telemetry, no analytics, no phoning home. The skill reads local files with local commands. The source is 4 text files you can read in 5 minutes.
-- **No fear-based messaging.** Your machine isn't "at risk" because it has a browser cache. We tell you what's there, what it is, and let you decide.
+- **Nothing is a black box.** You see every command before it runs. You know exactly what's being removed and why.
+- **Everything is reversible.** Backup with manifest before any destructive operation. One command to restore.
+- **Your data stays on your machine.** No telemetry, no analytics, no phoning home. The source is a few text files you can read in 5 minutes.
+- **No fear-based messaging.** Your machine isn't "at risk" because it has a browser cache. We tell you what's there and let you decide.
 
 ## Requirements
 
@@ -75,24 +69,11 @@ That's it. No build step, no dependencies.
 - Standard macOS tools (du, stat, find, df)
 - Homebrew (optional, graceful degradation if missing)
 
-Yes, this is "just" a prompt. The runtime is Claude Code. The intelligence is the prompt. A 10-line bash script can clear caches, but it won't detect orphaned app data from deleted apps, won't know Flutter hasn't been used in 6 months, won't find hardcoded API keys in your shell config, and won't know not to delete your SSH keys. That reasoning is what you're getting.
-
-## Roadmap
-
-**v1.0** (current) — macOS cleanup. Audit, triage, clean with backup safety model. Security alerts (flag-only).
-
-**v1.1** — Linux support. `catalog-linux.md` with XDG paths, apt/dnf/pacman detection. CONTRIBUTING.md for community catalog contributions.
-
-**v2.0** — `intellisweep modernize`. Tool swap workflows (NVM to fnm, pyenv to uv, neofetch to fastfetch). Config migration, shell config updates, project compatibility verification. Separated from cleanup because tool swaps are harder and riskier than deletions.
-
-**v3.0** — Dev environment doctor. Persistent machine manifest (`~/.intellisweep/manifest.json`) that tracks your environment across runs. Deep security scanning (LaunchAgents, browser extensions). "New Mac setup" mode. Cross-machine awareness.
-
-The long-term vision: IntelliSweep becomes Claude Code's understanding of the physical machine it runs on.
+This is a Claude Code skill. The runtime is Claude Code. The intelligence is in the prompt. A bash script can clear caches, but it won't detect orphaned app data from deleted apps, won't know an SDK hasn't been used in 6 months, won't find hardcoded API keys in your shell config, and won't know not to delete your SSH keys.
 
 ## Contributing
 
-Want to add paths for a tool not yet covered? Edit `catalog.md` and submit a PR.
-The format is a markdown table with path, tool name, and notes.
+Add paths for tools not yet covered by editing `catalog.md` and submitting a PR.
 
 ## Uninstall
 
