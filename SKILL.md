@@ -377,39 +377,45 @@ When cleaning dead PATH entries or broken lazy-load functions from shell configs
 
 ### Report
 
-After all actions complete, generate a summary:
+After all actions complete, generate an HTML report and open it in the browser.
 
-```markdown
-# /intellisweep report — YYYY-MM-DD
+Write to `~/.devclean-report-YYYY-MM-DD.html` using the Write tool. The HTML should be
+a single self-contained file (inline CSS, no external dependencies) with:
 
-## Summary
-- Items found: N across M categories
-- Items cleaned: N
-- Space recovered: XGB (before: YGB free → after: ZGB free)
-- Backup location: ~/.devclean-backup/YYYY-MM-DD/
+**Layout:**
+- Clean sans-serif font (system-ui)
+- Max-width 720px, centered
+- Dark header bar with white text showing the date and total space recovered
 
-## Cleaned items
-| Item | Size freed | Category |
-|------|-----------|----------|
-| ... | ... | ... |
+**Summary card** at the top:
+- Before/after disk space in large text
+- Space recovered highlighted in green
+- Items found / items cleaned / items skipped counts
 
-## Skipped items
-| Item | Reason |
-|------|--------|
-| ... | User declined |
+**Findings table** with color-coded rows:
+- Green background for permanent wins
+- Yellow background for long-lasting wins
+- Gray background for temporary wins (with note: "refills on use")
+- Each row: item name, size, evidence, permanence, action taken
 
-## Security alerts (action needed)
-| Item | Issue | Suggested action |
-|------|-------|-----------------|
-| ... | ... | ... |
+**Security alerts** section (if any):
+- Red left border
+- File, line number, issue type, suggested action
 
-## Modernization suggestions
-| Tool | Replacement | How |
-|------|------------|-----|
-| ... | ... | ... |
+**Backup info** at the bottom:
+- Location of backup directory
+- How to restore: the exact command
+
+Keep the HTML simple. No JavaScript, no frameworks. Just semantic HTML + inline CSS
+that looks clean in any browser.
+
+After writing the file:
+```bash
+open ~/.devclean-report-YYYY-MM-DD.html
 ```
 
-Write this report to `~/.devclean-report-YYYY-MM-DD.md`.
+This gives the user a shareable, screenshot-friendly report that looks polished
+without building a GUI.
 
 ### Backup management
 
