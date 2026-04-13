@@ -9,8 +9,7 @@ AI-powered dev environment cleanup for Mac. A Claude Code skill that replaces cr
 - [Install](#install)
 - [Usage](#usage)
 - [What it finds](#what-it-finds)
-- [No cleanup theater](#no-cleanup-theater)
-- [Safety](#safety)
+- [Principles](#principles)
 - [Requirements](#requirements)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
@@ -60,19 +59,14 @@ That's it. No build step, no dependencies.
 | App data cruft | Orphaned containers from deleted apps, abandoned game data |
 | Security flags | Hardcoded API keys, old SSH keys, stale credential files |
 
-## No cleanup theater
+## Principles
 
-Most cleanup tools clear browser caches and Slack data so they can show "freed 8GB!" in a satisfying animation. That space is back by Tuesday.
-
-IntelliSweep tells you what's permanent and what's not. Every finding shows whether the freed space is gone for good, comes back only if you actively use the tool, or refills within hours. If a 2GB cache will be 2GB again by tomorrow, we'll say so. We'd rather show 4GB of real wins than 12GB of fake ones.
-
-## Safety
-
-- **Backup before delete**: Moderate and destructive items are backed up to `~/.devclean-backup/` with a manifest for easy restore
-- **One at a time**: Every deletion is confirmed individually. No batch deletes.
-- **Rolling cleanup**: Safe items first (frees space), then moderate items one-by-one
-- **Alert-only security**: Credential files are flagged, never modified or deleted
-- **Dry-run mode**: `/intellisweep --dry-run` shows everything without touching anything
+- **Open source, free forever.** No ads, no VIP tiers, no subscription. MIT licensed.
+- **No cleanup theater.** Every finding shows permanence. We'd rather show 4GB of real wins than 12GB that refills by Tuesday.
+- **Nothing is a black box.** You see every command before it runs. You know exactly what's being removed and why. No progress bars hiding mystery deletions.
+- **Everything is reversible.** Backup with manifest before any destructive operation. One command to restore. If you regret something, undo it.
+- **Your data stays on your machine.** No telemetry, no analytics, no phoning home. The skill reads local files with local commands. The source is 4 text files you can read in 5 minutes.
+- **No fear-based messaging.** Your machine isn't "at risk" because it has a browser cache. We tell you what's there, what it is, and let you decide.
 
 ## Requirements
 
