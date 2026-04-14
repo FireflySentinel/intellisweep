@@ -334,11 +334,24 @@ ls ~/Library/Containers/ 2>/dev/null
 ls ~/Library/Application\ Support/ 2>/dev/null
 ```
 
-For each entry in Containers/ or Application Support/ where the parent app is NOT
-in /Applications/ (match by bundle ID or app name), flag it as an orphan:
-"[app name] was uninstalled but left behind [size] of data in [path]."
+For each entry in Containers/ or Application Support/ where a matching app is NOT
+found in /Applications/, ~/Applications/, /Applications/Setapp/, or
+/System/Applications/, flag it as a POSSIBLE orphan.
 
-Orphans are permanent wins. They never refill. Add them to the Permanent wins tier.
+**WARNING:** Bundle ID to app name mapping is unreliable.
+`com.tinyspeck.slackmacgap` = Slack. `com.apple.geod` = system service with no .app.
+Background services, CLI tools, and system components have containers without apps.
+
+Present possible orphans as their own section with individual confirmation only.
+NEVER batch-clean orphans. NEVER put them in the Safe tier. Always show the bundle
+ID and let the user decide:
+
+"Possible orphan: com.tinyspeck.slackmacgap (5.8GB in ~/Library/Containers/).
+Could not match to an installed app. This might be Slack, a renamed app, or
+a system service. Delete?"
+  → [Delete] [Skip] [What is this?]
+
+If the user asks "What is this?", search for the bundle ID to help identify it.
 
 ## Phase 3: Action
 
