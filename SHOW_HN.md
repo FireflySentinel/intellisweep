@@ -23,8 +23,8 @@ I packaged this into a Claude Code skill called IntelliSweep. It's 4 text files 
 What it does:
 - Audits your machine using multiple staleness signals (file timestamps, git activity, shell history, brew install dates)
 - Presents findings in risk-tiered categories with evidence strings
-- Cleans one item at a time with explicit confirmation
-- Backs up before destructive operations with a manifest for restore
+- Cleans with explicit confirmation (batch for caches, individual for tools)
+- Logs every deletion with reinstall instructions
 - Has a --dry-run mode that shows everything without touching anything
 
 What it doesn't do:

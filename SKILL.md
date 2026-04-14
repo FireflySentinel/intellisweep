@@ -106,9 +106,14 @@ Map the result:
 - `Linux` → read `catalog-linux.md`
 - `MINGW*` or `MSYS*` or Windows → read `catalog-windows.md`
 
-If the catalog file for the detected platform doesn't exist, warn:
-"No catalog for [platform] yet. Running in discovery-only mode (no safeguard
-list). Be extra careful with deletions."
+If the detected platform is not `Darwin`, warn and ask before continuing:
+
+"IntelliSweep is tested on macOS. Linux and Windows catalogs exist but are
+experimental and community-contributed. Proceed at your own risk."
+  → [Proceed anyway] [Stop]
+
+If "Stop": end the session. If the catalog file doesn't exist at all, refuse:
+"No catalog for [platform]. Cannot run without a safeguard list."
 
 The catalog provides safeguards (never touch), known patterns (recognize when found),
 and security patterns.
@@ -131,9 +136,18 @@ du -sh ~/Library/*/ 2>/dev/null | sort -hr | awk '/[0-9.]+G/ || (/M/ && $1+0>=10
 du -sh ~/Library/Application\ Support/*/ ~/Library/Caches/*/ ~/Library/Containers/*/ 2>/dev/null | sort -hr | awk '/[0-9.]+G/ || (/M/ && $1+0>=200)'
 ```
 ```bash
-# 4. Shell config issues (dead PATHs + secrets)
+# 4a. Dead PATHs
 echo $PATH | tr ':' '\n' | while read p; do [ ! -d "$p" ] && echo "DEAD PATH: $p"; done
-grep -nE 'sk-[a-zA-Z0-9]{20,}|sk-ant-|ghp_[a-zA-Z0-9]{36}|AKIA[0-9A-Z]{16}|xoxb-|xoxp-|(API_KEY|SECRET|TOKEN|PASSWORD)=["'"'"'][^"'"'"']{8,}' ~/.zshrc ~/.bashrc ~/.zprofile ~/.zshrc.local ~/.bash_profile 2>/dev/null | sed 's/=.*/=<REDACTED>/'
+```
+```bash
+# 4b. Secrets — output ONLY file:line:pattern-type, NEVER the matching content
+for f in ~/.zshrc ~/.bashrc ~/.zprofile ~/.zshrc.local ~/.bash_profile; do
+  [ -f "$f" ] || continue
+  grep -n 'sk-[a-zA-Z0-9]\{20,\}' "$f" 2>/dev/null | while IFS=: read ln _; do echo "$f:$ln:OpenAI/Anthropic key"; done
+  grep -n 'ghp_[a-zA-Z0-9]\{36\}' "$f" 2>/dev/null | while IFS=: read ln _; do echo "$f:$ln:GitHub token"; done
+  grep -n 'AKIA[0-9A-Z]\{16\}' "$f" 2>/dev/null | while IFS=: read ln _; do echo "$f:$ln:AWS access key"; done
+  grep -n 'xox[bp]-' "$f" 2>/dev/null | while IFS=: read ln _; do echo "$f:$ln:Slack token"; done
+done
 ```
 
 That's it for fast mode. Four parallel commands. Results in ~30-60 seconds.
@@ -169,12 +183,28 @@ echo "docker: $(docker --version 2>/dev/null || echo 'not installed')"
 echo "Formulas: $(brew list --formula 2>/dev/null | wc -l | tr -d ' ')" && brew list --cask 2>/dev/null
 ```
 ```bash
-# 7. Scattered node_modules with sizes (limit output to top 10 by size)
-find ~ -maxdepth 4 -name "node_modules" -type d 2>/dev/null | head -20 | while read d; do du -sh "$d" 2>/dev/null; done | sort -hr | head -10
+# 7. Scattered node_modules (prune Library, .Trash, iCloud to avoid triggering downloads)
+find ~ -maxdepth 4 \
+  -path ~/Library -prune -o \
+  -path ~/.Trash -prune -o \
+  -path ~/Library/Mobile\ Documents -prune -o \
+  -path ~/Library/CloudStorage -prune -o \
+  -name "node_modules" -type d -print 2>/dev/null | head -20 | while read d; do
+    # Check if parent project has recent commits (skip active projects)
+    _proj="$(dirname "$d")"
+    _recent=$(cd "$_proj" && git log -1 --since=30.days --format="%h" 2>/dev/null)
+    if [ -z "$_recent" ]; then
+      du -sh "$d" 2>/dev/null
+    fi
+  done | sort -hr | head -10
 ```
 ```bash
-# 8. Python venvs with sizes (limit to top 10)
-find ~ -maxdepth 3 \( -name ".venv" -o -name "venv" \) -type d 2>/dev/null | head -20 | while read d; do du -sh "$d" 2>/dev/null; done | sort -hr | head -10
+# 8. Python venvs (same prune rules)
+find ~ -maxdepth 3 \
+  -path ~/Library -prune -o \
+  -path ~/.Trash -prune -o \
+  -path ~/Library/Mobile\ Documents -prune -o \
+  \( -name ".venv" -o -name "venv" \) -type d -print 2>/dev/null | head -20 | while read d; do du -sh "$d" 2>/dev/null; done | sort -hr | head -10
 ```
 ```bash
 # 9. Staleness signals for each dev tool found

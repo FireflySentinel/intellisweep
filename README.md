@@ -59,7 +59,7 @@ Safe items (caches) can be batch-cleaned in one approval. Moderate items require
 - **No cleanup theater.** Every finding shows permanence. We'd rather show 4GB of real wins than 12GB that refills by Tuesday.
 - **Nothing is a black box.** You see every command before it runs. You know exactly what's being removed and why.
 - **Every deletion is logged.** A log records what was removed, how big it was, and how to reinstall it. The log is the safety net, not a backup that doubles your disk usage.
-- **Your data stays on your machine.** No telemetry, no analytics, no phoning home. The source is a few text files you can read in 5 minutes.
+- **No telemetry, no phoning home.** IntelliSweep itself makes zero network requests. The source is a few text files you can read in 5 minutes. Note: Claude Code sends your conversation (including command output like directory sizes and path names) to Anthropic's API for processing. This is how Claude Code works for all skills, not specific to IntelliSweep.
 - **No fear-based messaging.** Your machine isn't "at risk" because it has a browser cache. We tell you what's there and let you decide.
 
 ## Requirements
