@@ -27,6 +27,7 @@ Finds stale dev tools, broken configs, orphaned app data, large caches, and hard
 | Large caches | Homebrew, Playwright, npm/pnpm stores, Xcode derived data |
 | AI tool caches | Claude VM bundles, Cursor WebStorage, Copilot cache |
 | Security flags | Hardcoded API keys in shell config, old SSH keys, stale credentials |
+| Directory reorganization | Scattered projects in any directory, group by purpose into subcategories |
 
 ## How it works
 
@@ -35,6 +36,8 @@ IntelliSweep explores your machine instead of checking a static list. It runs `d
 Findings are sorted by permanence, not size. A 500MB stale SDK that's gone forever ranks above a 2GB browser cache that refills by tomorrow.
 
 A safeguard list protects things that must never be touched: your documents, SSH keys, active project data, IDE settings, and credentials. Everything outside the safeguards is fair game for discovery.
+
+**Directory reorganization** scans the current directory for scattered projects and groups them by purpose. Run it from `~/` to organize your home directory, from a projects folder to restructure repos, or from anywhere else. It detects project types from git remotes, `SKILL.md`, `package.json`, and other markers, then proposes grouping that fits the context. Everything is proposed before anything moves, symlinks are fixed automatically, and every move is logged.
 
 ## Install
 
@@ -49,7 +52,7 @@ No build step, no dependencies.
 Type `/intellisweep` in Claude Code. Three quick questions configure the run:
 
 1. **Scan only or clean?** — choose whether to just look or actually remove things
-2. **What's bugging you?** — disk space, messy environment, security, or all of the above
+2. **What's bugging you?** — disk space, messy environment, security, directory organization, or all
 3. **Quick or deep?** — about 5 minutes for big wins, 10 for everything
 
 Safe items (caches that regenerate) are cleaned directly by the AI. Everything else is written to a shell script you review and run yourself. The AI never executes `rm` on your SDKs, tools, or app data.

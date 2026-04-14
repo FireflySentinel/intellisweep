@@ -29,6 +29,7 @@ encounters them during exploration, skip them silently or note them as protected
 ### Active development (deletion = lost work)
 | Path | Why |
 |------|-----|
+| `~/projects/` | Organized project directory (created by intellisweep reorg). Never delete the structure. Individual stale projects inside may be flagged. |
 | Any directory with a `.git/` and uncommitted changes | Active project with unsaved work |
 | Any directory with recent git commits (< 30 days) | Actively maintained project |
 | `~/Library/Application Support/*/User/` | IDE settings, keybindings, snippets (Cursor, VS Code, etc.) |

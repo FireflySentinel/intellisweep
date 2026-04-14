@@ -1,7 +1,7 @@
 ---
 name: intellisweep
-description: AI-powered Mac dev environment cleanup. Audits stale tools, broken configs, large caches, and security issues.
-version: 1.0.0
+description: AI-powered Mac dev environment cleanup. Audits stale tools, broken configs, large caches, security issues, and reorganizes scattered project directories.
+version: 1.1.0
 ---
 
 # /intellisweep — Dev Environment Cleanup
@@ -47,6 +47,8 @@ options:
     description: "Broken configs, stale tools, dead PATH entries. Stuff that shouldn't be there."
   - label: "Worried about security"
     description: "Hardcoded secrets, old SSH keys, stale credentials. I'll check."
+  - label: "My directory needs organizing"
+    description: "Projects scattered everywhere. Group repos and files by purpose. Works on the current directory."
   - label: "All of the above"
     description: "Full checkup. Show me everything."
 
@@ -54,7 +56,8 @@ Goal shapes the output:
 - **Running out of disk space** → sort triage by size descending, skip items < 100MB, lead with Tier 1
 - **My dev environment is a mess** → lead with broken configs and stale tools, include 0-byte issues like dead PATH entries
 - **Worried about security** → only show security flags section, skip caches and stale tools entirely
-- **All of the above** → full report, all categories, no filtering
+- **My directory needs organizing** → skip cleanup audit, run the Directory Reorganization workflow on `$PWD` instead (see below)
+- **All of the above** → full report, all categories, no filtering (does NOT include directory reorganization — that's a separate workflow)
 
 **Question 3** (AskUserQuestion)
 
@@ -470,3 +473,299 @@ Run: bash ~/.intellisweep/cleanup-YYYY-MM-DD.sh
 ```
 
 When the user runs the cleanup script, it appends its own results to the log.
+
+---
+
+## Directory Reorganization Workflow
+
+Activated when the user selects **"My directory needs organizing"** in Question 2.
+This is a separate workflow from cleanup. It skips the disk/cache audit entirely.
+
+**Operates on the current working directory (`$PWD`), not a hardcoded path.** This
+means the user can reorganize their home directory, a projects folder, a monorepo,
+or any other directory.
+
+### Reorg Step 0: Scope Detection
+
+Determine the target directory and apply context-appropriate behavior:
+
+```bash
+_REORG_DIR=$(pwd)
+_IS_HOME="false"
+[ "$_REORG_DIR" = "$HOME" ] && _IS_HOME="true"
+echo "REORG_DIR: $_REORG_DIR"
+echo "IS_HOME: $_IS_HOME"
+```
+
+**If not at home directory**, hint the user:
+
+> "I'll reorganize `$_REORG_DIR`. If you want to reorganize your entire home
+> directory instead, run `/intellisweep` from `~/`."
+
+Then continue with the current directory.
+
+**Context-specific behavior:**
+
+| Context | Skip list | Suggested grouping |
+|---------|-----------|-------------------|
+| `~/` (home) | macOS system dirs, dotfiles, app-data dirs | `projects/` with subcategories |
+| `~/projects/` or similar | Nothing auto-skipped | Subcategories (skills, tools, side, oss) |
+| A project root (has `.git`) | Warn: "This looks like a single project, not a directory of projects. Reorganize its contents?" | By module/feature/type depending on the project |
+| Any other directory | Nothing auto-skipped | Reason about contents and propose grouping |
+
+### Iron Rules (reorganization-specific)
+
+1. **When at `~/`: never move macOS system directories.** `Desktop`, `Documents`,
+   `Downloads`, `Library`, `Movies`, `Music`, `Pictures`, `Public`, `Applications`
+   stay put. This rule only applies when `_IS_HOME` is `true`.
+2. **Never move dotfiles/dotdirs.** Anything starting with `.` stays where it is,
+   regardless of target directory.
+3. **When at `~/`: never move app data directories.** `Zotero`, `OrbStack`, and
+   similar directories that apps expect at a fixed path. When unsure, check if the
+   directory has no `.git` and was created by an application.
+4. **Check for uncommitted work before any move.** Run `git status --short` in every
+   git repo. If there are uncommitted changes, warn the user and ask before moving.
+5. **Fix broken symlinks after moving.** Scan for symlinks that pointed to old paths
+   and offer to update them.
+6. **Log every move.** Write to `~/.intellisweep/reorg-YYYY-MM-DD.md` with old path,
+   new path, and what the project is.
+
+### Reorg Phase 1: Discovery
+
+Scan the target directory for its contents. Run these in parallel:
+
+```bash
+# 1. List all non-hidden directories in target
+_REORG_DIR=$(pwd)
+_IS_HOME="false"
+[ "$_REORG_DIR" = "$HOME" ] && _IS_HOME="true"
+
+ls -d "$_REORG_DIR"/*/  2>/dev/null | while read d; do
+  name=$(basename "$d")
+  # Skip macOS system dirs only if at home
+  if [ "$_IS_HOME" = "true" ]; then
+    case "$name" in
+      Applications|Desktop|Documents|Downloads|Library|Movies|Music|Pictures|Public) continue;;
+    esac
+  fi
+  echo "$name"
+done
+```
+```bash
+# 2. For each directory, detect project type
+_REORG_DIR=$(pwd)
+_IS_HOME="false"
+[ "$_REORG_DIR" = "$HOME" ] && _IS_HOME="true"
+
+for d in "$_REORG_DIR"/*/; do
+  name=$(basename "$d")
+  if [ "$_IS_HOME" = "true" ]; then
+    case "$name" in
+      Applications|Desktop|Documents|Downloads|Library|Movies|Music|Pictures|Public) continue;;
+    esac
+  fi
+  echo "=== $name ==="
+  # Git info
+  if [ -d "$d/.git" ]; then
+    echo "GIT: yes"
+    echo "REMOTE: $(cd "$d" && git remote get-url origin 2>/dev/null || echo 'none')"
+    echo "LAST_COMMIT: $(cd "$d" && git log -1 --format='%ci' 2>/dev/null || echo 'unknown')"
+    echo "UNCOMMITTED: $(cd "$d" && git status --short 2>/dev/null | wc -l | tr -d ' ')"
+  else
+    echo "GIT: no"
+  fi
+  # Language/framework detection
+  [ -f "$d/package.json" ] && echo "LANG: node"
+  [ -f "$d/Cargo.toml" ] && echo "LANG: rust"
+  [ -f "$d/go.mod" ] && echo "LANG: go"
+  [ -f "$d/pyproject.toml" ] || [ -f "$d/setup.py" ] && echo "LANG: python"
+  [ -f "$d/pubspec.yaml" ] && echo "LANG: flutter"
+  [ -f "$d/Package.swift" ] && echo "LANG: swift"
+  [ -f "$d/SKILL.md" ] && echo "TYPE: claude-skill"
+  # Size
+  echo "SIZE: $(du -sh "$d" 2>/dev/null | cut -f1)"
+done
+```
+```bash
+# 3. Find symlinks pointing into target directory (to fix after moving)
+_REORG_DIR=$(pwd)
+find "$_REORG_DIR" -maxdepth 3 -type l -exec sh -c '
+  target=$(readlink "$1")
+  case "$target" in
+    '"$_REORG_DIR"'/*) echo "SYMLINK: $1 -> $target";;
+  esac
+' _ {} \; 2>/dev/null
+# Also check ~/.claude/skills for symlinks pointing here
+find ~/.claude/skills -maxdepth 2 -type l -exec sh -c '
+  target=$(readlink "$1")
+  case "$target" in
+    '"$_REORG_DIR"'/*) echo "SYMLINK: $1 -> $target";;
+  esac
+' _ {} \; 2>/dev/null
+```
+
+### Reorg Phase 2: Categorization
+
+After discovery, categorize each directory. The categories available depend on
+context. Use judgment based on what was found.
+
+**When at `~/` (home directory):**
+
+| Category | Subdirectory | Description |
+|----------|-------------|-------------|
+| **startup** | `projects/STARTUP_NAME/` | Active startup or main project. Group related repos under one name. |
+| **skills** | `projects/skills/` | Claude Code skills (detected by `SKILL.md` presence). |
+| **tools** | `projects/tools/` | Developer tools, utilities, CLIs the user built. |
+| **side** | `projects/side/` | Side projects, experiments, hackathon projects. |
+| **oss** | `projects/oss/` | Third-party repos: forks, clones, contributions. Detected by git remote pointing to someone else's org. |
+| **non-code** | `Documents/` or similar | Non-code directories: wallpapers, game saves, media. |
+| **app-data** | (stays put) | Directories that apps expect at a fixed location. |
+
+**When at any other directory:**
+
+Don't force the home-directory categories. Reason about the contents and propose
+grouping that makes sense for the context. Examples:
+
+- A `projects/` dir with flat repos → group by purpose, language, or team
+- A monorepo root → group by module type (apps, packages, libs, config)
+- A course/learning directory → group by topic or semester
+- A downloads dump → group by file type or project
+
+**Category assignment heuristics (apply when relevant):**
+- `SKILL.md` exists → likely a Claude Code skill
+- Git remote is under a different GitHub org than the user's → likely a fork/clone
+- Multiple repos share a name prefix (e.g., `foo`, `foo-website`, `foo-api`) → group them
+- No `.git` and no code files → non-code
+- App expects it at a fixed path → leave it alone
+
+**Identifying related repos:** Look for clusters with shared name prefixes or
+related domains. If found, ask the user to confirm the grouping.
+
+### Reorg Phase 3: Proposal
+
+Present the proposed reorganization as a table. Use AskUserQuestion to confirm.
+
+Example for home directory:
+```
+## Proposed structure for ~/
+
+### Moving to ~/projects/
+
+| Current | Proposed | Category |
+|---------|----------|----------|
+| ~/my-startup | ~/projects/my-startup/my-startup | startup |
+| ~/my-startup-web | ~/projects/my-startup/my-startup-web | startup |
+| ~/cool-skill | ~/projects/skills/cool-skill | skill |
+| ~/some-tool | ~/projects/tools/some-tool | tool |
+| ~/fun-hack | ~/projects/side/fun-hack | side |
+| ~/linux-fork | ~/projects/oss/linux-fork | oss |
+
+### Staying put
+
+| Directory | Reason |
+|-----------|--------|
+| ~/Zotero | App expects this location |
+| ~/OrbStack | App data |
+```
+
+Example for a generic directory:
+```
+## Proposed structure for /path/to/dir/
+
+| Current | Proposed | Reason |
+|---------|----------|--------|
+| ./alpha-api | ./backend/alpha-api | Backend service |
+| ./alpha-web | ./frontend/alpha-web | Frontend app |
+| ./shared-utils | ./libs/shared-utils | Shared library |
+| ./old-prototype | ./archive/old-prototype | Stale, last commit 8 months ago |
+```
+
+AskUserQuestion:
+- question: "Look good? I can adjust categories before moving anything."
+- options:
+  - "Move everything as proposed"
+  - "Let me adjust some categories first"
+  - "Just show me the script, I'll do it myself"
+
+If "Let me adjust": ask the user which items to recategorize, update the plan, re-present.
+
+If "Just show me the script": skip to writing a move script (like Track 2 cleanup scripts).
+
+### Reorg Phase 4: Execution
+
+All paths below use `$_REORG_DIR` as the base.
+
+**Step 1: Create directories**
+```bash
+mkdir -p "$_REORG_DIR"/{CATEGORIES_USED}
+```
+
+**Step 2: Move items**
+
+Move one category at a time. After each category, verify the moves worked:
+
+```bash
+mv "$_REORG_DIR"/old-name "$_REORG_DIR"/category/old-name
+[ -d "$_REORG_DIR"/category/old-name ] && echo "OK: old-name" || echo "FAIL: old-name"
+```
+
+**Step 3: Fix symlinks**
+
+For any symlinks discovered in Phase 1 that pointed to moved directories:
+```bash
+ln -sfn "$_REORG_DIR"/category/target /path/to/symlink
+```
+
+Show each symlink fix to the user before applying.
+
+**Step 4: Clean up empty leftovers**
+
+Check for empty directories or leftover cache dirs at the target:
+```bash
+find "$_REORG_DIR" -maxdepth 1 -type d -empty 2>/dev/null | grep -v '/\.'
+```
+
+Remove any empties after confirming.
+
+**Step 5: Log the reorganization**
+
+Write to `~/.intellisweep/reorg-YYYY-MM-DD.md`:
+
+```markdown
+# intellisweep reorg — YYYY-MM-DD
+
+**Target:** /path/to/dir
+
+## Moves
+
+| From | To | Category | Size |
+|------|----|----------|------|
+| ./my-startup | ./projects/my-startup/my-startup | startup | 415M |
+| ./cool-skill | ./projects/skills/cool-skill | skill | 828K |
+
+## Symlinks updated
+
+| Symlink | Old target | New target |
+|---------|-----------|------------|
+| ~/.claude/skills/foo | /old/path/foo | /new/path/foo |
+
+## Deleted
+
+| Path | Reason | Size |
+|------|--------|------|
+| ./stale-demo | User confirmed deletion (no git, stale) | 3.3M |
+
+## Items left in place
+
+| Directory | Reason |
+|-----------|--------|
+| ./Zotero | App expects this location |
+```
+
+**Step 6: Post-move tips**
+
+After reorganization, suggest relevant tips based on what was moved:
+- Shell aliases for frequently accessed projects
+- Updating IDE workspace files that reference old paths
+- Running `hash -r` to clear shell command cache
+- If symlinks were updated, mention which tools may need a restart
