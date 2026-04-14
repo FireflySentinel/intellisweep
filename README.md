@@ -12,6 +12,7 @@ AI-powered dev environment cleanup for Mac. A [Claude Code](https://claude.ai/do
 - [Requirements](#requirements)
 - [Contributing](#contributing)
 - [Uninstall](#uninstall)
+- [Disclaimer](#disclaimer)
 - [License](#license)
 
 ## What it does
@@ -86,6 +87,10 @@ To also remove logs:
 ```bash
 rm -rf ~/.intellisweep
 ```
+
+## Disclaimer
+
+This tool deletes files from your machine. While it asks for confirmation before every action and logs what it removes, **you are responsible for reviewing what gets deleted.** We recommend running a scan-only pass first (`select "Just looking"`) before cleaning anything. The authors are not responsible for any data loss. Use at your own risk.
 
 ## License
 
