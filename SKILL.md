@@ -16,7 +16,7 @@ user confirmation.
 Print the local version on startup. No network requests. No phoning home.
 
 ```bash
-echo "intellisweep v$(cat VERSION 2>/dev/null || echo 'unknown')"
+echo "intellisweep v$(cat ~/.claude/skills/intellisweep/VERSION 2>/dev/null || echo 'unknown')"
 ```
 
 To check for updates manually: `cd ~/.claude/skills/intellisweep && git pull`
@@ -73,9 +73,9 @@ options:
 2. **Never touch credential files.** Security findings are ALERT-ONLY. Flag the file
    and line number. Suggest the user rotate the secret. Never delete, redact, or
    modify credential files, SSH keys, or .env files.
-3. **Never touch SIP-protected paths.** Only operate on user-space paths (`~/`,
-   `~/Library/`). Never attempt to modify anything under `/System/`, `/usr/`,
-   `/Library/` (system-level), or other root-owned paths.
+3. **Never touch system paths.** Only operate on user-space paths (`~/` and
+   `~/Library/`). Never modify `/System/`, `/usr/`, or `/Library/` (the root-level
+   Library, NOT `~/Library/` which is user-space and in scope).
 4. **Log everything deleted.** Write to `~/.intellisweep/log-YYYY-MM-DD.md` with
    the item path, size, and how to reinstall. The log is the safety net.
 5. **Degrade gracefully.** If a tool is missing (brew, git), skip checks that need
@@ -124,16 +124,16 @@ Run ALL of these commands in parallel (use multiple Bash tool calls in one messa
 
 **Batch 1 (run all at once):**
 ```bash
-# 1. Disk overview (only items > 100MB to save tokens)
-df -h / && du -sh ~/* 2>/dev/null | sort -hr | awk 'NR<=20 && (/[0-9.]+G/ || (/M/ && $1+0>=100))'
+# 1. Disk overview (only items > 100MB, 60s timeout)
+df -h / && timeout 60 du -sh ~/* 2>/dev/null | sort -hr | awk 'NR<=20 && (/[0-9.]+G/ || (/M/ && $1+0>=100))' || echo "TIMEOUT: home dir scan took too long"
 ```
 ```bash
-# 2. Library breakdown (only > 100MB)
-du -sh ~/Library/*/ 2>/dev/null | sort -hr | awk '/[0-9.]+G/ || (/M/ && $1+0>=100)'
+# 2. Library breakdown (only > 100MB, 60s timeout)
+timeout 60 du -sh ~/Library/*/ 2>/dev/null | sort -hr | awk '/[0-9.]+G/ || (/M/ && $1+0>=100)' || echo "TIMEOUT: Library scan took too long"
 ```
 ```bash
-# 3. Deep dive into big Library subdirs (only > 200MB)
-du -sh ~/Library/Application\ Support/*/ ~/Library/Caches/*/ ~/Library/Containers/*/ 2>/dev/null | sort -hr | awk '/[0-9.]+G/ || (/M/ && $1+0>=200)'
+# 3. Deep dive into big Library subdirs (only > 200MB, 60s timeout)
+timeout 60 du -sh ~/Library/Application\ Support/*/ ~/Library/Caches/*/ ~/Library/Containers/*/ 2>/dev/null | sort -hr | awk '/[0-9.]+G/ || (/M/ && $1+0>=200)' || echo "TIMEOUT: deep dive took too long, try --deep"
 ```
 ```bash
 # 4a. Dead PATHs

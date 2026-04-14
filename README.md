@@ -64,7 +64,7 @@ Safe items (caches) can be batch-cleaned in one approval. Moderate items require
 
 ## Requirements
 
-- macOS (Linux support planned)
+- macOS (tested). Linux and Windows catalogs exist but are experimental and community-contributed.
 - [Claude Code](https://claude.ai/download) (requires an Anthropic subscription)
 - Standard macOS tools (du, stat, find, df)
 - Homebrew (optional, graceful degradation if missing)

@@ -11,71 +11,64 @@ Run each scenario before releasing a new version. Report results in the PR.
 at least one stale tool, some caches.
 
 **Steps**:
-1. Run `/intellisweep`
+1. Run `/intellisweep`, select "scan and clean", "all of the above", "quick"
 2. Verify: Audit completes in < 5 minutes
-3. Verify: Findings appear in 3+ categories
-4. Verify: Total recoverable space is 10GB+ (typical dev Mac)
-5. Verify: Evidence strings are accurate (dates match `stat` output, sizes match `du`)
-6. Select 2-3 safe items, confirm cleanup
-7. Verify: Space is freed (check `df -h /` before and after)
-8. Verify: Report is generated at `~/.devclean-report-YYYY-MM-DD.md`
+3. Verify: Findings appear in 3+ categories, sorted by permanence
+4. Verify: Evidence strings are accurate (dates match `stat`, sizes match `du`)
+5. Verify: Safe items offered as batch, moderate items require individual confirm
+6. Clean a few items
+7. Verify: Live disk space shown after each deletion
+8. Verify: Log written to `~/.intellisweep/log-YYYY-MM-DD.md`
+9. Verify: Log contains deleted item paths, sizes, and reinstall commands
 
-**Pass criteria**: Audit is accurate, cleanup works, report matches reality.
+**Pass criteria**: Accurate findings, correct permanence labels, log is complete.
 
 ## Scenario 2: Near-full disk (< 5GB free)
 
-**Setup**: A Mac with < 5GB free space and several large caches/stale tools.
+**Setup**: A Mac with < 5GB free space.
 
 **Steps**:
-1. Run `/intellisweep`
-2. Verify: Audit completes (may be slower due to disk pressure)
-3. Select a mix of safe + moderate items
-4. Verify: Safe items are cleaned FIRST (no backup)
-5. Verify: Moderate items are cleaned one-by-one with rolling space
-6. Verify: No "disk full" errors during backup operations
-7. Verify: Each backup is created before its corresponding deletion
+1. Run `/intellisweep`, select "scan and clean", "free disk space", "quick"
+2. Verify: Audit completes (may be slower under disk pressure)
+3. Verify: Items < 100MB are filtered out (disk space goal)
+4. Verify: Safe items cleaned first without issue
+5. Verify: Moderate items deletable one by one, no disk-full errors
 
-**Pass criteria**: Rolling cleanup works without hitting disk-full errors.
+**Pass criteria**: Works on a nearly-full disk without errors.
 
 ## Scenario 3: No Homebrew installed
 
-**Setup**: A Mac without Homebrew (fresh install or Homebrew removed).
+**Setup**: A Mac without Homebrew.
 
 **Steps**:
 1. Run `/intellisweep`
-2. Verify: No crash or error when brew commands fail
-3. Verify: Output mentions "Homebrew not installed, skipping brew-related checks"
-4. Verify: Other categories still scanned (caches, shell config, etc.)
+2. Verify: No crash when brew commands fail
+3. Verify: Output mentions skipping brew-related checks
+4. Verify: Other categories still scanned
 
-**Pass criteria**: Graceful degradation, no crash, other checks still work.
+**Pass criteria**: Graceful degradation.
 
-## Scenario 4: Backup and restore round-trip
+## Scenario 4: Deletion confirmation flow
 
 **Steps**:
-1. Run `/intellisweep`
-2. Select a moderate-risk item (e.g., an old SDK)
-3. Confirm deletion
-4. Verify: manifest.json exists at `~/.devclean-backup/YYYY-MM-DD/manifest.json`
-5. Verify: manifest contains correct original path, size, risk level
-6. Ask to restore the item
-7. Verify: Item is restored to original location
-8. Verify: `ls -la` shows correct permissions and structure
-9. If the tool had a version command, verify it still works
+1. Run `/intellisweep`, select "scan and clean"
+2. Verify: Safe items show batch option [Clean all] [Let me pick] [Skip]
+3. Choose "Let me pick" — verify each safe item shows [Delete] [Skip]
+4. Verify: Moderate items always show individual [Delete] [Skip]
+5. Verify: Possible orphans show [Delete] [Skip] [What is this?]
+6. Verify: Security alerts have NO delete option (alert only)
 
-**Pass criteria**: Round-trip preserves data integrity, permissions, and structure.
+**Pass criteria**: Correct confirmation tier per risk level.
 
 ## Scenario 5: Partial cancellation
 
 **Steps**:
-1. Run `/intellisweep`
-2. Select 5+ items for cleanup
-3. After 2-3 items are cleaned, cancel (Ctrl+C or tell Claude to stop)
-4. Verify: Items cleaned before cancel are gone
-5. Verify: Items not yet cleaned are untouched
-6. Verify: Backup exists for cleaned moderate/destructive items
-7. Verify: Report shows partial progress ("3 of 5 items cleaned")
+1. Run `/intellisweep`, select several items for cleanup
+2. After 2-3 items cleaned, cancel (Ctrl+C or tell Claude to stop)
+3. Verify: Cleaned items are gone, others untouched
+4. Verify: Log shows what was cleaned so far
 
-**Pass criteria**: Partial state is consistent, no data corruption.
+**Pass criteria**: Partial state is consistent.
 
 ## Scenario 6: Clean machine
 
@@ -83,29 +76,51 @@ at least one stale tool, some caches.
 
 **Steps**:
 1. Run `/intellisweep`
-2. Verify: Audit completes quickly (< 5 minutes)
+2. Verify: Audit completes quickly
 3. Verify: Few or no findings
-4. Verify: Skill says something like "Your machine is pretty clean" rather than
-   presenting an empty triage report
+4. Verify: Handles "nothing to find" gracefully
 
-**Pass criteria**: Handles the "nothing to do" case gracefully.
+**Pass criteria**: No empty tables, no confusing output.
 
-## Scenario 7: Dry-run
+## Scenario 7: Scan only (dry run)
 
 **Steps**:
-1. Run `/intellisweep --dry-run`
-2. Verify: Full triage report is presented
-3. Verify: No cleanup is offered or performed
-4. Verify: No files are modified, deleted, or backed up
-5. Verify: Ends with "Run `/intellisweep` to proceed with cleanup"
+1. Run `/intellisweep`, select "scan only"
+2. Verify: Full triage report presented
+3. Verify: No cleanup offered, no files deleted
+4. Verify: No log file created (nothing was deleted)
 
-**Pass criteria**: Zero side effects in audit-only mode.
+**Pass criteria**: Zero side effects.
+
+## Scenario 8: Secret detection safety
+
+**Steps**:
+1. Add a test secret to a shell config (e.g., `export TEST_KEY="sk-test123..."`)
+2. Run `/intellisweep`
+3. Verify: Security alert shows file and line number
+4. Verify: The actual secret value NEVER appears in Claude's output
+5. Verify: Output says something like `~/.zshrc:18:OpenAI/Anthropic key`
+6. Clean up the test secret
+
+**Pass criteria**: File:line:type only. Secret value never in stdout or Claude context.
+
+## Scenario 9: Log completeness
+
+**Steps**:
+1. Run `/intellisweep` and clean 3+ items of different risk levels
+2. Read `~/.intellisweep/log-YYYY-MM-DD.md`
+3. Verify: Every deleted item listed with path, size, permanence
+4. Verify: "How to reinstall" column has actual commands (not empty)
+5. Verify: Skipped items listed with reason
+6. Verify: Security alerts listed (if any were found)
+
+**Pass criteria**: Log is a complete record of what happened.
 
 ## Edge cases to verify
 
 - [ ] Path with spaces (e.g., `~/Library/Application Support/`)
-- [ ] Very large directory (> 10GB) — timeout handling
-- [ ] .zshrc with no secrets — security section is empty or says "no issues found"
+- [ ] Very large directory (> 10GB) — should timeout, not hang
+- [ ] .zshrc with no secrets — security section empty or "no issues found"
 - [ ] Multiple shell configs (.zshrc + .bashrc + .zprofile) — all scanned
-- [ ] Second run on same day — backup dir gets `-2` suffix
-- [ ] Backup prune with no old backups — handles gracefully
+- [ ] Possible orphan with ambiguous bundle ID — shows raw ID, lets user decide
+- [ ] iCloud Drive present — `find` does NOT trigger placeholder downloads
