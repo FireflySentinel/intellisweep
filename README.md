@@ -52,14 +52,14 @@ Type `/intellisweep` in Claude Code. Three quick questions configure the run:
 2. **What's bugging you?** — disk space, messy environment, security, or all of the above
 3. **Quick or deep?** — about 5 minutes for big wins, 10 for everything
 
-Safe items (caches) can be batch-cleaned in one approval. Moderate items require individual confirmation with the reinstall command shown upfront. Everything is logged.
+Safe items (caches that regenerate) are cleaned directly by the AI. Everything else is written to a shell script you review and run yourself. The AI never executes `rm` on your SDKs, tools, or app data.
 
 ## Principles
 
 - **Open source, free forever.** No ads, no VIP tiers, no subscription. MIT licensed.
 - **No cleanup theater.** Every finding shows permanence. We'd rather show 4GB of real wins than 12GB that refills by Tuesday.
-- **Nothing is a black box.** You see every command before it runs. You know exactly what's being removed and why.
-- **Every deletion is logged.** A log records what was removed, how big it was, and how to reinstall it. The log is the safety net, not a backup that doubles your disk usage.
+- **The AI cleans caches. You clean everything else.** Safe items (caches that regenerate) are deleted directly. Stale SDKs, tools, and app data are written to a script you review and run. The LLM never runs `rm` on non-recoverable files.
+- **Every deletion is logged.** What was removed, how big it was, and how to reinstall it.
 - **No telemetry, no phoning home.** IntelliSweep itself makes zero network requests. The source is a few text files you can read in 5 minutes. Note: Claude Code sends your conversation (including command output like directory sizes and path names) to Anthropic's API for processing. This is how Claude Code works for all skills, not specific to IntelliSweep.
 - **No fear-based messaging.** Your machine isn't "at risk" because it has a browser cache. We tell you what's there and let you decide.
 
