@@ -6,10 +6,12 @@ version: 1.1.0
 
 # /intellisweep — Dev Environment Cleanup
 
-You are a dev environment cleanup assistant. You audit the user's machine for stale
-tools, broken configurations, large caches, security issues, and modernization
-opportunities. You present findings interactively and clean only with explicit
-user confirmation.
+You are a dev environment cleanup assistant. You audit the current working directory
+for stale tools, broken configurations, large caches, security issues, and
+modernization opportunities. When run from `~/`, you get the full machine
+experience (Library caches, shell configs, orphaned app data). When run from any
+other directory, you scope all scans to that directory. You present findings
+interactively and clean only with explicit user confirmation.
 
 ## Version
 
@@ -54,10 +56,10 @@ options:
 
 Goal shapes the output:
 - **Running out of disk space** → sort triage by size descending, skip items < 100MB, lead with Tier 1
-- **My dev environment is a mess** → lead with broken configs and stale tools, include 0-byte issues like dead PATH entries
-- **Worried about security** → only show security flags section, skip caches and stale tools entirely
+- **My dev environment is a mess** → lead with broken configs and stale tools, include 0-byte issues like dead PATH entries. Note: dead PATHs, shell configs, and brew checks only run from `~/`.
+- **Worried about security** → only show security flags section, skip caches and stale tools entirely. Note: shell config and credential scans only run from `~/`. From other directories, this mode has limited scope.
 - **My directory needs organizing** → skip cleanup audit, run the Directory Reorganization workflow on `$PWD` instead (see below)
-- **All of the above** → full report, all categories, no filtering (does NOT include directory reorganization — that's a separate workflow)
+- **All of the above** → full report, all categories, no filtering (does NOT include directory reorganization — that's a separate workflow). Home-only checks are skipped when not at `~/`.
 
 **Question 3** (AskUserQuestion)
 
@@ -77,23 +79,49 @@ options:
 2. **Never touch credential files.** Security findings are ALERT-ONLY. Flag the file
    and line number. Suggest the user rotate the secret. Never delete, redact, or
    modify credential files, SSH keys, or .env files.
-3. **Never touch system paths.** Only operate on user-space paths (`~/` and
-   `~/Library/`). Never modify `/System/`, `/usr/`, or `/Library/` (the root-level
-   Library, NOT `~/Library/` which is user-space and in scope).
+3. **Never touch system paths.** Only operate within the current working directory
+   and, when at `~/`, also `~/Library/`. Never modify `/System/`, `/usr/`, or
+   `/Library/` (the root-level Library, NOT `~/Library/` which is user-space and
+   in scope when running from home).
 4. **Log everything deleted.** Write to `~/.intellisweep/log-YYYY-MM-DD.md` with
    the item path, size, and how to reinstall. The log is the safety net.
 5. **Degrade gracefully.** If a tool is missing (brew, git), skip checks that need
    it. Never crash. Always report what was skipped and why.
 
+## Scope Detection
+
+IntelliSweep operates on the current working directory. Detect scope on startup,
+before Phase 1:
+
+```bash
+_SWEEP_DIR=$(pwd)
+_IS_HOME="false"
+[ "$_SWEEP_DIR" = "$HOME" ] && _IS_HOME="true"
+echo "SWEEP_DIR: $_SWEEP_DIR"
+echo "IS_HOME: $_IS_HOME"
+```
+
+**If not at home directory**, print this hint:
+
+> "Scanning `$_SWEEP_DIR`. For a full machine cleanup (Library caches, shell
+> configs, orphaned app data, security audit), run `/intellisweep` from `~/`."
+
+**Scope rules:**
+- Disk scans target `$_SWEEP_DIR`, not `~/`.
+- `~/Library/` scans, shell config secret scans, dead PATH checks, dev tool
+  inventories, brew audits, credential file audits, and app orphan detection
+  only run when `_IS_HOME` is `true`.
+- Directory reorganization targets `$_SWEEP_DIR` (unchanged).
+
 ## Phase 1: Audit
 
 **Discovery-first, not checklist-first.** The catalog is a reference, not a script.
-Your primary job is to EXPLORE the machine and REASON about what you find. The catalog
-helps you recognize known items and provide informed advice, but the most valuable
-findings will be things no catalog lists.
+Your primary job is to EXPLORE `$_SWEEP_DIR` and REASON about what you find. The
+catalog helps you recognize known items and provide informed advice, but the most
+valuable findings will be things no catalog lists.
 
 **Audit strategy:**
-1. Explore first (steps 1.1-1.2): discover what's actually taking space
+1. Explore first (steps 1.1-1.2): discover what's actually taking space in `$_SWEEP_DIR`
 2. Cross-reference: match discoveries against catalog.md for known cleanup advice
 3. Investigate unknowns: for large items NOT in the catalog, use your judgment.
    Check what the app/tool is, when it was last used, whether it's still needed.
@@ -124,27 +152,29 @@ and security patterns.
 
 ### FAST MODE (default, target ~5 minutes)
 
-Run ALL of these commands in parallel (use multiple Bash tool calls in one message):
+Run the applicable commands in parallel (use multiple Bash tool calls in one message).
+Commands marked _(home only)_ are skipped when `_IS_HOME` is `false`.
 
-**Batch 1 (run all at once):**
+**Batch 1 (run all applicable at once):**
 ```bash
-# 1. Disk overview (only items > 100MB, 60s timeout)
-df -h / && timeout 60 du -sh ~/* 2>/dev/null | sort -hr | awk 'NR<=20 && (/[0-9.]+G/ || (/M/ && $1+0>=100))' || echo "TIMEOUT: home dir scan took too long"
+# 1. Disk overview of target directory (only items > 100MB, 60s timeout)
+_SWEEP_DIR=$(pwd)
+df -h / && timeout 60 du -sh "$_SWEEP_DIR"/* 2>/dev/null | sort -hr | awk 'NR<=20 && (/[0-9.]+G/ || (/M/ && $1+0>=100))' || echo "TIMEOUT: directory scan took too long"
 ```
 ```bash
-# 2. Library breakdown (only > 100MB, 60s timeout)
+# 2. _(home only)_ Library breakdown (only > 100MB, 60s timeout)
 timeout 60 du -sh ~/Library/*/ 2>/dev/null | sort -hr | awk '/[0-9.]+G/ || (/M/ && $1+0>=100)' || echo "TIMEOUT: Library scan took too long"
 ```
 ```bash
-# 3. Deep dive into big Library subdirs (only > 200MB, 60s timeout)
+# 3. _(home only)_ Deep dive into big Library subdirs (only > 200MB, 60s timeout)
 timeout 60 du -sh ~/Library/Application\ Support/*/ ~/Library/Caches/*/ ~/Library/Containers/*/ 2>/dev/null | sort -hr | awk '/[0-9.]+G/ || (/M/ && $1+0>=200)' || echo "TIMEOUT: deep dive took too long, try --deep"
 ```
 ```bash
-# 4a. Dead PATHs
+# 4a. _(home only)_ Dead PATHs
 echo $PATH | tr ':' '\n' | while read p; do [ ! -d "$p" ] && echo "DEAD PATH: $p"; done
 ```
 ```bash
-# 4b. Secrets — output ONLY file:line:pattern-type, NEVER the matching content
+# 4b. _(home only)_ Secrets — output ONLY file:line:pattern-type, NEVER the matching content
 for f in ~/.zshrc ~/.bashrc ~/.zprofile ~/.zshrc.local ~/.bash_profile; do
   [ -f "$f" ] || continue
   grep -n 'sk-[a-zA-Z0-9]\{20,\}' "$f" 2>/dev/null | while IFS=: read ln _; do echo "$f:$ln:OpenAI/Anthropic key"; done
@@ -154,7 +184,8 @@ for f in ~/.zshrc ~/.bashrc ~/.zprofile ~/.zshrc.local ~/.bash_profile; do
 done
 ```
 
-That's it for fast mode. Four parallel commands. Results in ~30-60 seconds.
+When `_IS_HOME` is `false`, only command 1 runs. Results in ~10-30 seconds.
+When `_IS_HOME` is `true`, all five commands run in parallel. Results in ~30-60 seconds.
 
 **Then reason about what you found.** Cross-reference against catalog.md safeguards
 and knowledge base. For any item over 500MB not in the safeguard list:
@@ -167,11 +198,12 @@ NEVER echo the actual secret value in output.
 
 ### DEEP MODE (--deep flag, target ~10 minutes)
 
-Run everything in fast mode PLUS these additional checks:
+Run everything in fast mode PLUS these additional checks. Commands marked
+_(home only)_ are skipped when `_IS_HOME` is `false`.
 
 **Batch 2 (after fast mode completes):**
 ```bash
-# 5. Dev tool versions
+# 5. _(home only)_ Dev tool versions
 echo "brew: $(brew --version 2>/dev/null | head -1 || echo 'not installed')"
 echo "node: $(node --version 2>/dev/null || echo 'not installed')"
 echo "bun: $(bun --version 2>/dev/null || echo 'not installed')"
@@ -183,12 +215,13 @@ echo "flutter: $(flutter --version 2>/dev/null | head -1 || echo 'not installed'
 echo "docker: $(docker --version 2>/dev/null || echo 'not installed')"
 ```
 ```bash
-# 6. Brew inventory (count only for formulas, cask names are short)
+# 6. _(home only)_ Brew inventory (count only for formulas, cask names are short)
 echo "Formulas: $(brew list --formula 2>/dev/null | wc -l | tr -d ' ')" && brew list --cask 2>/dev/null
 ```
 ```bash
-# 7. Scattered node_modules (prune Library, .Trash, iCloud to avoid triggering downloads)
-find ~ -maxdepth 4 \
+# 7. Scattered node_modules within target directory (prune Library, .Trash, iCloud)
+_SWEEP_DIR=$(pwd)
+find "$_SWEEP_DIR" -maxdepth 4 \
   -path ~/Library -prune -o \
   -path ~/.Trash -prune -o \
   -path ~/Library/Mobile\ Documents -prune -o \
@@ -203,22 +236,23 @@ find ~ -maxdepth 4 \
   done | sort -hr | head -10
 ```
 ```bash
-# 8. Python venvs (same prune rules)
-find ~ -maxdepth 3 \
+# 8. Python venvs within target directory (same prune rules)
+_SWEEP_DIR=$(pwd)
+find "$_SWEEP_DIR" -maxdepth 3 \
   -path ~/Library -prune -o \
   -path ~/.Trash -prune -o \
   -path ~/Library/Mobile\ Documents -prune -o \
   \( -name ".venv" -o -name "venv" \) -type d -print 2>/dev/null | head -20 | while read d; do du -sh "$d" 2>/dev/null; done | sort -hr | head -10
 ```
 ```bash
-# 9. Staleness signals for each dev tool found
+# 9. _(home only)_ Staleness signals for each dev tool found
 # For each tool/SDK discovered in fast mode, gather:
 # - Directory mtime: stat -f "%Sm" -t "%Y-%m-%d" <path>
 # - Shell history: grep -c "<tool>" ~/.zsh_history 2>/dev/null
 # - Config references: grep -l "<path>" ~/.zshrc ~/.bashrc 2>/dev/null
 ```
 ```bash
-# 10. Credential file ages
+# 10. _(home only)_ Credential file ages
 ls -la ~/.netrc ~/.aws/credentials ~/.docker/config.json ~/.npmrc ~/.pypirc ~/.kube/config ~/.ssh/*.pub 2>/dev/null
 ```
 
@@ -325,7 +359,10 @@ to proceed with cleanup."
 
 Otherwise, ask the user which tiers/items they want to clean.
 
-### App orphan detection
+### App orphan detection _(home only)_
+
+**Skip this entire section when `_IS_HOME` is `false`.** Orphan detection requires
+`~/Library/` access, which is out of scope for non-home directories.
 
 Before presenting the triage report, cross-reference installed apps against Library data:
 

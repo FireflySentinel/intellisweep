@@ -31,7 +31,9 @@ Finds stale dev tools, broken configs, orphaned app data, large caches, and hard
 
 ## How it works
 
-IntelliSweep explores your machine instead of checking a static list. It runs `du` across your home directory and Library, finds what's actually taking space, then reasons about each item: when was it last used? Is the parent app still installed? Is the config referencing something that no longer exists?
+IntelliSweep explores the current directory instead of checking a static list. It runs `du` across the working directory, finds what's actually taking space, then reasons about each item: when was it last used? Is the parent app still installed? Is the config referencing something that no longer exists?
+
+Run from `~/` for the full machine experience (Library caches, shell config secrets, orphaned app data, dev tool inventory). Run from any other directory to scope all scans to that directory only.
 
 Findings are sorted by permanence, not size. A 500MB stale SDK that's gone forever ranks above a 2GB browser cache that refills by tomorrow.
 
